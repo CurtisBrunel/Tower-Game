@@ -1,6 +1,6 @@
 import pygame
 import sys
-
+import random
 
 # --- Character Classes ---
 class Mage:
@@ -64,58 +64,106 @@ class Warrior:
 
 #Enemies
 class Enemy:
-    def __init__(self, x, y, enemy_type="goblin"):
-        # Set appearance based on type
+#Base enemy stats
+    def __init__(self, x, y):
         self.image = pygame.Surface((60, 80))
-        self.enemy_type = enemy_type
-
-        # Different colors for different enemy types
-        if enemy_type == "goblin":
-            self.image.fill((150, 50, 50))  # Dark red
-            self.name = "Goblin"
-            # Stats
-            self.max_hp = 50
-            self.hp = 50
-            self.defense = 8
-            self.ad = 15
-            self.md = 5
-            self.speed = 40
-
-        elif enemy_type == "skeleton":
-            self.image.fill((200, 200, 200))  # Bone white
-            self.name = "Skeleton"
-            # Stats
-            self.max_hp = 70
-            self.hp = 70
-            self.defense = 12
-            self.ad = 20
-            self.md = 10
-            self.speed = 30
-
-        elif enemy_type == "ogre":
-            self.image.fill((50, 150, 50))  # Dark green
-            self.name = "Ogre"
-            # Stats
-            self.max_hp = 120
-            self.hp = 120
-            self.defense = 20
-            self.ad = 30
-            self.md = 15
-            self.speed = 20
-
         self.rect = self.image.get_rect(topleft=(x, y))
+        self.name = "Generic Enemy"
+        self.max_hp = 1
+        self.hp = 1
+        self.defense = 0
+        self.ad = 1  # Attack Damage
+        self.md = 1  # Magic Damage
+        self.speed = 10
 
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
     def take_damage(self, damage):
-        actual_damage = max(1, damage - self.defense // 2)
-        self.hp = max(0, self.hp - actual_damage)
-        return actual_damage  # Return how much damage was actually taken
+        damage_taken = max(1, damage - (self.defense // 2))
+        self.hp = max(0, self.hp - damage_taken)
+        return damage_taken
 
     def is_alive(self):
         return self.hp > 0
 
+    def attack(self):
+        return random.randint(self.ad // 2, self.ad)
+
+
+class Goblin(Enemy):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.image.fill((150, 50, 50))  # Dark red
+        self.name = "Goblin"
+        self.max_hp = 50
+        self.hp = 50
+        self.defense = 8
+        self.ad = 15
+        self.md = 5
+        self.speed = 40
+
+    def special_ability(self):
+        """Goblins have a chance to attack twice"""
+        if random.random() < 0.3:  # 30% chance
+            return self.attack()  # Second attack
+        return 0
+
+
+class Skeleton(Enemy):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.image.fill((200, 200, 200))  # Bone white
+        self.name = "Skeleton"
+        self.max_hp = 70
+        self.hp = 70
+        self.defense = 12
+        self.ad = 20
+        self.md = 10
+        self.speed = 30
+
+    def take_damage(self, damage):
+        """Skeletons take reduced damage from physical attacks"""
+        return super().take_damage(damage // 2)
+
+
+class Ogre(Enemy):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.image.fill((50, 150, 50))  # Dark green
+        self.name = "Ogre"
+        self.max_hp = 120
+        self.hp = 120
+        self.defense = 20
+        self.ad = 30
+        self.md = 15
+        self.speed = 20
+
+    def attack(self):
+        """Ogres hit harder but less accurately"""
+        if random.random() < 0.7:  # 70% hit chance
+            return random.randint(self.ad - 5, self.ad + 5)
+        return 0  # Missed attack
+
+
+class Demon(Enemy):
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.image.fill((150, 0, 150))  # Purple
+        self.name = "Demon"
+        self.max_hp = 90
+        self.hp = 90
+        self.defense = 15
+        self.ad = 25
+        self.md = 30
+        self.speed = 35
+
+    def attack(self):
+        """Demons can do physical or magical damage"""
+        if random.random() < 0.5:
+            return random.randint(self.ad // 2, self.ad)  # Physical
+        else:
+            return random.randint(self.md // 2, self.md)  # Magical
 
 # --- Game States ---
 class GameState:

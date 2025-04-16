@@ -62,6 +62,60 @@ class Warrior:
     def draw(self, surface):
         surface.blit(self.image, self.rect)
 
+#Enemies
+class Enemy:
+    def __init__(self, x, y, enemy_type="goblin"):
+        # Set appearance based on type
+        self.image = pygame.Surface((60, 80))
+        self.enemy_type = enemy_type
+
+        # Different colors for different enemy types
+        if enemy_type == "goblin":
+            self.image.fill((150, 50, 50))  # Dark red
+            self.name = "Goblin"
+            # Stats
+            self.max_hp = 50
+            self.hp = 50
+            self.defense = 8
+            self.ad = 15
+            self.md = 5
+            self.speed = 40
+
+        elif enemy_type == "skeleton":
+            self.image.fill((200, 200, 200))  # Bone white
+            self.name = "Skeleton"
+            # Stats
+            self.max_hp = 70
+            self.hp = 70
+            self.defense = 12
+            self.ad = 20
+            self.md = 10
+            self.speed = 30
+
+        elif enemy_type == "ogre":
+            self.image.fill((50, 150, 50))  # Dark green
+            self.name = "Ogre"
+            # Stats
+            self.max_hp = 120
+            self.hp = 120
+            self.defense = 20
+            self.ad = 30
+            self.md = 15
+            self.speed = 20
+
+        self.rect = self.image.get_rect(topleft=(x, y))
+
+    def draw(self, surface):
+        surface.blit(self.image, self.rect)
+
+    def take_damage(self, damage):
+        actual_damage = max(1, damage - self.defense // 2)
+        self.hp = max(0, self.hp - actual_damage)
+        return actual_damage  # Return how much damage was actually taken
+
+    def is_alive(self):
+        return self.hp > 0
+
 
 # --- Game States ---
 class GameState:

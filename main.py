@@ -2,7 +2,10 @@ import pygame
 import sys
 import random
 
-# --- Character Classes ---
+
+
+
+# Character Classes
 class Mage:
     def __init__(self, x, y):
         self.image = pygame.Surface((80, 120))
@@ -165,13 +168,17 @@ class Demon(Enemy):
         else:
             return random.randint(self.md // 2, self.md)  # Magical
 
-# --- Game States ---
+# Game States
 class GameState:
     CHARACTER_SELECT = 0
     GAMEPLAY = 1
+    TOWER_FLOOR = 1
+    COMBAT = 2
+    COMBAT_RESULT = 3
 
 
-# --- Main Game ---
+
+# Main Game
 def main():
     pygame.init()
     screen_width, screen_height = 800, 600
@@ -184,12 +191,19 @@ def main():
     # Game state
     game_state = GameState.CHARACTER_SELECT
     selected_character = None
+    current_floor = 1
+    enemies = []
+    combat_result = ""
+    selected_action = 0
+
 
     # Create character selection options
     mage = Mage(screen_width // 4, screen_height // 2)
     rogue = Rogue(screen_width // 2, screen_height // 2)
     warrior = Warrior(3 * screen_width // 4, screen_height // 2)
     characters = [mage, rogue, warrior]
+
+
 
     running = True
     while running:
@@ -264,6 +278,7 @@ def main():
                                              True, (200, 200, 200))
             screen.blit(instructions, (screen_width // 2 - instructions.get_width() // 2,
                                        screen_height - 50))
+
 
         pygame.display.flip()
         clock.tick(60)

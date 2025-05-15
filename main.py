@@ -2,6 +2,7 @@
 
 import pygame
 import sys
+import random
 
 
 #Initilise pygame
@@ -20,6 +21,15 @@ clock = pygame.time.Clock()
 
 #Fonts
 font = pygame.font.SysFont('Arial', 30)
+
+#Colours
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (100, 100, 100)
+DARK_GRAY = (50, 50, 50)
+BLUE = (0, 0, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
 
 #Character and Stats
 class CharacterClass:
@@ -61,6 +71,224 @@ class Rogue(CharacterClass):
             "defense": None,
             "speed": None,
         })
+#Enemies
+class Enemy:
+    def __init__(self, name, base_stats):
+        self.name = name
+        self.base_stats = base_stats.copy()
+        self.stats = base_stats.copy()
+
+    def scale_stats(self, floor):
+        scale_factor = 1 + (floor / 10)
+        for stat in self.stats:
+            self.stats[stat] = int(self.base_stats[stat] * scale_factor)
+
+class Goblin(Enemy):
+    def __init__(self):
+        super().__init__("Goblin", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class SkeletonWarrior(Enemy):
+    def __init__(self):
+        super().__init__("Skeleton Warrior", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class GiantRat(Enemy):
+    def __init__(self):
+        super().__init__("Giant Rat", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class BatSwarm(Enemy):
+    def __init__(self):
+        super().__init__("Bat Swarm", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class Orc(Enemy):
+    def __init__(self):
+        super().__init__("Orc", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class Spider(Enemy):
+    def __init__(self):
+        super().__init__("Spider", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class CursedKnight(Enemy):
+    def __init__(self):
+        super().__init__("Cursed Knight", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class Minitor(Enemy):
+    def __init__(self):
+        super().__init__("Minitor", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class Necromancer(Enemy):
+    def __init__(self):
+        super().__init__("Necromancer", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class DarkElf(Enemy):
+    def __init__(self):
+        super().__init__("Dark Elf", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class Hydra(Enemy):
+    def __init__(self):
+        super().__init__("Hyrda", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class Lich(Enemy):
+    def __init__(self):
+        super().__init__("Lich", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class VampireLord(Enemy):
+    def __init__(self):
+        super().__init__("Vampire Lord", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+class DarkPalidin(Enemy):
+    def __init__(self):
+        super().__init__("Dark Palidin", {
+            "health": 5,
+            "mana": 5,
+            "attack": 5,
+            "defense": 5,
+            "speed": 5,
+        })
+
+FLOOR_ENEMY_TIERS = {
+    "low": [Goblin, SkeletonWarrior, GiantRat, BatSwarm, Orc, Spider],
+    "mid": [Spider, CursedKnight, Minitor, Necromancer, DarkElf],
+    "high": [Hydra, Lich, DarkPalidin, VampireLord],
+}
+
+
+
+def get_random_enemy_for_floor(floor):
+    if floor % 5 == 0:
+        return None
+
+    if floor <= 19:
+        enemy_class = random.choice(FLOOR_ENEMY_TIERS["low"])
+    elif floor <= 39:
+        enemy_class = random.choice(FLOOR_ENEMY_TIERS["mid"])
+    elif floor <= 50:
+        enemy_class = random.choice(FLOOR_ENEMY_TIERS["high"])
+    else:
+        return None
+
+    enemy = enemy_class()
+    enemy.scale_stats(floor)
+    return enemy
+
+def generate_enemies_for_floor(floor, enemy_pool):
+    num_enemies = random.randint(3, 6)
+    enemies = []
+
+    for i in range(num_enemies):
+        enemy_class = random.choice(enemy_pool)
+        enemy = enemy_class()
+        enemy.scale_stats(floor)
+        enemies.append(enemy)
+
+    return enemies
+
+
+current_floor = 1
+floor_intro_start_time = None
+FLOOR_INTRO_DURATION  = 2000
+
+def get_enemy_pool_for_floor(floor):
+    if floor <= 19:
+        return FLOOR_ENEMY_TIERS["low"]
+    elif floor <= 39:
+        return FLOOR_ENEMY_TIERS["mid"]
+    elif floor <= 50:
+        return FLOOR_ENEMY_TIERS["high"]
+    else:
+        return []
+
+
+def start_floor(floor):
+    global current_floor, floor_intro_start_time, game_state, floor_enemies, selected_enemy
+    current_floor = floor
+    floor_intro_start_time = pygame.time.get_ticks()
+    game_state = STATE_FLOOR_INTRO
+    selected_enemy = None
+    enemy_pool = get_enemy_pool_for_floor(current_floor)
+    floor_enemies = generate_enemies_for_floor(current_floor, enemy_pool)
+
+def draw_floor_intro_screen():
+    screen.fill(DARK_GRAY)
+    floor_text = font.render(f"Floor {current_floor}", True, WHITE)
+    screen.blit(floor_text, floor_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)))
 
 
 #Game States
@@ -69,6 +297,7 @@ STATE_START = "start"
 STATE_CHARACTER_SELECTION = "character_selection"
 STATE_STATS = "stats"
 STATE_GAME = "game"
+STATE_FLOOR_INTRO = "floor_intro"
 
 game_state = STATE_TITLE
 
@@ -84,14 +313,7 @@ warrior = Warrior()
 rogue = Rogue()
 
 
-#Colours
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-GRAY = (100, 100, 100)
-DARK_GRAY = (50, 50, 50)
-BLUE = (0, 0, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
+
 
 
 #Buttons location
@@ -212,10 +434,17 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
                 if start_game_button_rect.collidepoint(mouse_pos):
-                    game_state = STATE_GAME
+                    start_floor(1)
 
-        elif game_state == STATE_GAME:
-            draw_game_screen()
+    if game_state == STATE_FLOOR_INTRO:
+        draw_floor_intro_screen()
+        now = pygame.time.get_ticks()
+        if now - floor_intro_start_time >= FLOOR_INTRO_DURATION:
+            print("Floor intro ended, switching to STATE_GAME")
+            game_state = STATE_GAME
+
+
+
 
 
 
@@ -229,6 +458,8 @@ while running:
         draw_character_selection()
     elif game_state == STATE_STATS:
         draw_stats_screen()
+    elif game_state == STATE_GAME:
+        draw_game_screen()
 
 
 

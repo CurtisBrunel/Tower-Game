@@ -262,8 +262,8 @@ def generate_enemies_for_floor(floor, enemy_pool):
 
 
 current_floor = 1
-floor_intro_start_time = None
-FLOOR_INTRO_DURATION  = 2000
+floor_intro_start_time = 20
+FLOOR_INTRO_DURATION  = 1000
 
 def get_enemy_pool_for_floor(floor):
     if floor <= 19:

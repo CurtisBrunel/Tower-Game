@@ -1,5 +1,4 @@
 
-
 import pygame
 import sys
 import random
@@ -31,6 +30,7 @@ BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
+
 #Character and Stats
 class CharacterClass:
     def __init__(self, name, stats: dict):
@@ -44,7 +44,7 @@ class CharacterClass:
 
 class MAGE(CharacterClass):
     def __init__(self):
-        super().__init__("MAGE", {
+        super().__init__("Mage", {
             "health": None,
             "mana": None,
             "attack": None,
@@ -249,7 +249,7 @@ def get_random_enemy_for_floor(floor):
     return enemy
 
 def generate_enemies_for_floor(floor, enemy_pool):
-    num_enemies = random.randint(3, 6)
+    num_enemies = random.randint(2, 4)
     enemies = []
 
     for i in range(num_enemies):
@@ -275,6 +275,65 @@ def get_enemy_pool_for_floor(floor):
     else:
         return []
 
+def draw_enemies(enemies):
+    enemy_box_width = 50
+    enemy_box_height = 50
+    spacing_y = 30
+    top_margin = 100
+
+    name_font = pygame.font.SysFont("Arial", 15)
+    hp_font = pygame.font.SysFont("Arial", 10)
+
+    left_x = SCREEN_WIDTH // 2 + 80
+    right_x = SCREEN_WIDTH - 130
+
+
+    for index, enemy in enumerate(enemies):
+
+        x = left_x if index % 2 == 0 else right_x
+        y = top_margin + index * (enemy_box_height + spacing_y)
+
+        #Enemy box
+        enemy_rect = pygame.Rect(x, y, enemy_box_width, enemy_box_height)
+        pygame.draw.rect(screen, WHITE, enemy_rect)
+
+        #Draw name of enemy
+        name_text = font.render(enemy.name, True, WHITE)
+        name_rect = name_text.get_rect(midbottom=(x + enemy_box_width // 2, y - 45))
+        screen.blit(name_text, name_rect)
+
+        #Enemy's hp
+        health_text = font.render(f"HP: {enemy.stats['health']}", True, WHITE)
+        health_rect = name_text.get_rect(midbottom=(x + enemy_box_width // 2, y - 15))
+        screen.blit(health_text, health_rect)
+
+
+def draw_main_character():
+    box_width = 120
+    box_height = 120
+    padding = 250
+
+    x = padding
+    y = SCREEN_HEIGHT // 2 - box_height // 2
+
+    if selected_class is not None:
+        if selected_class.name == "Mage":
+            colour = BLUE
+        elif selected_class.name == "Warrior":
+            colour = RED
+        elif selected_class.name == "Rogue":
+            colour = GREEN
+        else:
+            colour = GRAY
+
+    else:
+        colour = GRAY
+
+    pygame.draw.rect(screen, colour, pygame.Rect(x, y, box_width, box_height))
+
+    class_text = font.render(selected_class.name if selected_class else "", True, WHITE)
+    text_rect = class_text.get_rect(center=(x + box_width // 2, y + box_height // 2))
+    screen.blit(class_text, text_rect)
 
 def start_floor(floor):
     global current_floor, floor_intro_start_time, game_state, floor_enemies, selected_enemy
@@ -303,6 +362,12 @@ game_state = STATE_TITLE
 
 #Add start button
 start_game_button_rect = pygame.Rect(SCREEN_WIDTH - 210, SCREEN_HEIGHT - 110, 200, 60)
+
+#Combat buttons
+attack_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 310, SCREEN_HEIGHT - 100, 200, 60)
+spell_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 100, 200, 60)
+item_button_rect = pygame.Rect(SCREEN_WIDTH // 2 + 110, SCREEN_HEIGHT - 100, 200, 60)
+
 
 #Variable for character selection
 selected_class = None
@@ -388,8 +453,27 @@ def draw_stats_screen():
 
 def draw_game_screen():
     screen.fill(DARK_GRAY)
-    game_text = font.render(f"Main game started", True, WHITE)
-    screen.blit(game_text, game_text.get_rect(center =(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)))
+    # game_text = font.render(f"Main game started", True, WHITE)
+    # screen.blit(game_text, game_text.get_rect(center =(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)))
+    draw_title_screen()
+
+    draw_enemies(floor_enemies)
+
+    #Draw comabt buttons
+    draw_button(attack_button_rect, "Attack")
+    draw_button(spell_button_rect, "Spell")
+    draw_button(item_button_rect, "Item")
+
+    if selected_class:
+        health = selected_class.stats.get("health", 0)
+        mana = selected_class.stats.get("mana", 0)
+
+        health_text = font.render(f"HP: {health}", True, WHITE)
+        mana_text = font.render(f"MANA: {mana}", True, WHITE)
+
+        padding = 20
+        screen.blit(health_text, (padding, padding))
+        screen.blit(mana_text, (padding, padding + health_text.get_height() + 5))
 
 #Game Loop
 running = True
@@ -436,12 +520,23 @@ while running:
                 if start_game_button_rect.collidepoint(mouse_pos):
                     start_floor(1)
 
-    if game_state == STATE_FLOOR_INTRO:
-        draw_floor_intro_screen()
-        now = pygame.time.get_ticks()
-        if now - floor_intro_start_time >= FLOOR_INTRO_DURATION:
-            print("Floor intro ended, switching to STATE_GAME")
-            game_state = STATE_GAME
+        elif game_state == STATE_FLOOR_INTRO:
+            draw_floor_intro_screen()
+            now = pygame.time.get_ticks()
+            if now - floor_intro_start_time >= FLOOR_INTRO_DURATION:
+                print("Floor intro ended, switching to STATE_GAME")
+                game_state = STATE_GAME
+
+        elif game_state == STATE_GAME:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_pos = pygame.mouse.get_pos()
+                if attack_button_rect.collidepoint(mouse_pos):
+                    print("Attack selected")
+                elif spell_button_rect.collidepoint(mouse_pos):
+                    print("Spell selected")
+                elif item_button_rect.collidepoint(mouse_pos):
+                    print("Item selected")
+
 
 
 
@@ -460,6 +555,7 @@ while running:
         draw_stats_screen()
     elif game_state == STATE_GAME:
         draw_game_screen()
+        draw_main_character()
 
 
 

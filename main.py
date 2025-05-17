@@ -71,6 +71,56 @@ class Rogue(CharacterClass):
             "defense": None,
             "speed": None,
         })
+
+
+show_stats_popup = False
+
+def draw_stats_popup():
+    if not selected_class:
+        return
+
+    popup_width = 400
+    popup_height = 300
+    popup_x = SCREEN_WIDTH // 2 - popup_width // 2
+    popup_y = SCREEN_HEIGHT // 2 - popup_height // 2
+
+    #Popup background
+    popup_rect = pygame.Rect(popup_x, popup_y, popup_width, popup_height)
+    pygame.draw.rect(screen, GRAY, popup_rect, 0)
+    pygame.draw.rect(screen, WHITE, popup_rect, 3) #Border
+
+    #Header
+    header_text = font.render(f"{selected_class.name}'s Stats", True, WHITE)
+    screen.blit(header_text, header_text.get_rect(center=(SCREEN_WIDTH // 2, popup_y + 30)))
+
+    #Stats list
+    stat_y = popup_y + 70
+    for stat, value in selected_class.stats.items():
+        stat_text = font.render(f"{stat.capitalize()}: {value}", True, WHITE)
+        screen.blit(stat_text, (popup_x +30, stat_y))
+        stat_y += 40
+
+show_attack_options = False
+
+#Big box for action buttons
+action_menu_rect = pygame.Rect(SCREEN_WIDTH // 2 -200, SCREEN_HEIGHT - 300, 400, 200)
+
+#Button size and spacing
+button_width = 170
+button_height = 60
+button_spacing_x = 20
+button_spacing_y = 20
+
+#Top left corner of action menu
+menu_x = action_menu_rect.x + 20
+menu_y = action_menu_rect.y + 20
+
+#2x2 layout for buttons
+attack_option_button_rect = pygame.Rect(menu_x, menu_y, button_width, button_height)
+spell_option_button_rect = pygame.Rect(menu_x + button_width + button_spacing_x, menu_y, button_width, button_height)
+future1_button_rect = pygame.Rect(menu_x, menu_y + button_height + button_spacing_y, button_width, button_height)
+future2_button_rect = pygame.Rect(menu_x + button_width + button_spacing_x, menu_y + button_height + button_spacing_y, button_width, button_height)
+
 #Enemies
 class Enemy:
     def __init__(self, name, base_stats):
@@ -185,7 +235,7 @@ class DarkElf(Enemy):
 
 class Hydra(Enemy):
     def __init__(self):
-        super().__init__("Hyrda", {
+        super().__init__("Hydra", {
             "health": 5,
             "mana": 5,
             "attack": 5,
@@ -284,8 +334,8 @@ def draw_enemies(enemies):
     name_font = pygame.font.SysFont("Arial", 15)
     hp_font = pygame.font.SysFont("Arial", 10)
 
-    left_x = SCREEN_WIDTH // 2 + 80
-    right_x = SCREEN_WIDTH - 130
+    left_x = SCREEN_WIDTH // 2 + 200
+    right_x = SCREEN_WIDTH - 170
 
 
     for index, enemy in enumerate(enemies):
@@ -304,7 +354,7 @@ def draw_enemies(enemies):
 
         #Enemy's hp
         health_text = font.render(f"HP: {enemy.stats['health']}", True, WHITE)
-        health_rect = name_text.get_rect(midbottom=(x + enemy_box_width // 2, y - 15))
+        health_rect = health_text.get_rect(midbottom=(x + enemy_box_width // 2, y - 15))
         screen.blit(health_text, health_rect)
 
 
@@ -365,7 +415,7 @@ start_game_button_rect = pygame.Rect(SCREEN_WIDTH - 210, SCREEN_HEIGHT - 110, 20
 
 #Combat buttons
 attack_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 310, SCREEN_HEIGHT - 100, 200, 60)
-spell_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 100, 200, 60)
+stats_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 100, 200, 60)
 item_button_rect = pygame.Rect(SCREEN_WIDTH // 2 + 110, SCREEN_HEIGHT - 100, 200, 60)
 
 
@@ -437,6 +487,11 @@ def draw_character_selection():
 def draw_stats_screen():
     screen.fill(DARK_GRAY)
 
+    if not selected_class:
+        error_text = font.render("No selected class", True, WHITE)
+        screen.blit(error_text, error_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)))
+        return
+
     #Display the selected class stats
     stats_text = font.render(f"{selected_class.name} Stats", True, WHITE)
     screen.blit(stats_text, stats_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 4)))
@@ -455,13 +510,11 @@ def draw_game_screen():
     screen.fill(DARK_GRAY)
     # game_text = font.render(f"Main game started", True, WHITE)
     # screen.blit(game_text, game_text.get_rect(center =(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)))
-    draw_title_screen()
-
     draw_enemies(floor_enemies)
 
-    #Draw comabt buttons
+    #Draw combat buttons
     draw_button(attack_button_rect, "Attack")
-    draw_button(spell_button_rect, "Spell")
+    draw_button(stats_button_rect, "Stats")
     draw_button(item_button_rect, "Item")
 
     if selected_class:
@@ -475,6 +528,26 @@ def draw_game_screen():
         screen.blit(health_text, (padding, padding))
         screen.blit(mana_text, (padding, padding + health_text.get_height() + 5))
 
+    if show_attack_options:
+        #Draw the larger menu box
+        pygame.draw.rect(screen, DARK_GRAY, action_menu_rect)
+        pygame.draw.rect(screen, WHITE, action_menu_rect, 3) #boarder
+
+        for rect, label in [
+            (attack_option_button_rect, "Attack"),
+            (spell_option_button_rect, "Spell"),
+            (future1_button_rect, "_"),
+            (future2_button_rect, "_"),
+        ]:
+            pygame.draw.rect(screen, GRAY, rect)
+            pygame.draw.rect(screen, WHITE, rect, 2)
+            text_surface = font.render(label, True, WHITE)
+            text_rect = text_surface.get_rect(center=rect.center)
+            screen.blit(text_surface, text_rect)
+
+    if show_stats_popup:
+        draw_stats_popup()
+
 #Game Loop
 running = True
 while running:
@@ -486,7 +559,10 @@ while running:
         #ESC key to close game
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                running = False
+                if show_stats_popup:
+                    show_stats_popup = False
+                else:
+                    running = False
 
         #Transition
         if game_state == STATE_TITLE:
@@ -531,21 +607,40 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
                 if attack_button_rect.collidepoint(mouse_pos):
-                    print("Attack selected")
-                elif spell_button_rect.collidepoint(mouse_pos):
-                    print("Spell selected")
+                    show_attack_options = not show_attack_options
+                elif show_attack_options and attack_option_button_rect.collidepoint(mouse_pos):
+                    print("Basic attack selected")
+                    show_attack_options = False #Hides options after selecting
+                elif show_attack_options and spell_option_button_rect.collidepoint(mouse_pos):
+                    print("Spell option selected")
+                    show_attack_options = False
+                elif not attack_button_rect.collidepoint(mouse_pos):
+                    show_attack_options = False #Click outside hides menu
+
+                elif stats_button_rect.collidepoint(mouse_pos):
+                    show_stats_popup = not show_stats_popup
                 elif item_button_rect.collidepoint(mouse_pos):
                     print("Item selected")
 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE and show_stats_popup:
+                    show_stats_popup = False
 
 
 
 
-
+    if game_state == STATE_FLOOR_INTRO:
+        draw_floor_intro_screen()
+        now = pygame.time.get_ticks()
+        if now - floor_intro_start_time >= FLOOR_INTRO_DURATION:
+            game_state = STATE_GAME
+        pygame.display.flip()
+        clock.tick(60)
+        continue
 
 
     #Screen rendering based on state
-    if game_state == STATE_TITLE:
+    elif game_state == STATE_TITLE:
         draw_title_screen()
     elif game_state == STATE_START:
         draw_start_screen()

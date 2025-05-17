@@ -69,7 +69,7 @@ class MAGE(CharacterClass):
             "health": 60,
             "mana": 120,
             "attack": 20,
-            "defense": 5,
+            "defence": 5,
             "speed": 8,
         })
 
@@ -79,7 +79,7 @@ class Warrior(CharacterClass):
             "health": 100,
             "mana": 40,
             "attack": 25,
-            "defense": 5,
+            "defence": 5,
             "speed": 8,
         })
 
@@ -89,7 +89,7 @@ class Rogue(CharacterClass):
             "health": 80,
             "mana": 60,
             "attack": 18,
-            "defense": 8,
+            "defence": 8,
             "speed": 12,
         })
 
@@ -165,7 +165,7 @@ class Goblin(Enemy):
             "health": 40,
             "mana": 10,
             "attack": 8,
-            "defense": 2,
+            "defence": 2,
             "speed": 10,
         })
 
@@ -175,7 +175,7 @@ class SkeletonWarrior(Enemy):
             "health": 50,
             "mana": 20,
             "attack": 10,
-            "defense": 4,
+            "defence": 4,
             "speed": 6,
         })
 
@@ -185,7 +185,7 @@ class GiantRat(Enemy):
             "health": 35,
             "mana": 5,
             "attack": 7,
-            "defense": 2,
+            "defence": 2,
             "speed": 9,
         })
 
@@ -195,7 +195,7 @@ class BatSwarm(Enemy):
             "health": 30,
             "mana": 0,
             "attack": 5,
-            "defense":1,
+            "defence":1,
             "speed": 12,
         })
 
@@ -205,7 +205,7 @@ class Orc(Enemy):
             "health": 60,
             "mana": 10,
             "attack": 12,
-            "defense": 6,
+            "defence": 6,
             "speed": 5,
         })
 
@@ -215,7 +215,7 @@ class Spider(Enemy):
             "health": 40,
             "mana": 10,
             "attack": 8,
-            "defense": 3,
+            "defence": 3,
             "speed": 8,
         })
 
@@ -225,7 +225,7 @@ class CursedKnight(Enemy):
             "health": 80,
             "mana": 30,
             "attack": 18,
-            "defense": 10,
+            "defence": 10,
             "speed": 5,
         })
 
@@ -235,7 +235,7 @@ class Minitor(Enemy):
             "health": 90,
             "mana": 10,
             "attack": 22,
-            "defense": 12,
+            "defence": 12,
             "speed": 4,
         })
 
@@ -245,7 +245,7 @@ class Necromancer(Enemy):
             "health": 70,
             "mana": 60,
             "attack": 15,
-            "defense": 6,
+            "defence": 6,
             "speed": 7,
         })
 
@@ -255,7 +255,7 @@ class DarkElf(Enemy):
             "health": 65,
             "mana": 50,
             "attack": 16,
-            "defense": 5,
+            "defence": 5,
             "speed": 11,
         })
 
@@ -265,7 +265,7 @@ class Hydra(Enemy):
             "health": 120,
             "mana": 40,
             "attack": 25,
-            "defense": 12,
+            "defence": 12,
             "speed": 5,
         })
 
@@ -275,7 +275,7 @@ class Lich(Enemy):
             "health": 90,
             "mana": 100,
             "attack": 30,
-            "defense": 10,
+            "defence": 10,
             "speed": 7,
         })
 
@@ -285,7 +285,7 @@ class VampireLord(Enemy):
             "health": 100,
             "mana": 80,
             "attack": 22,
-            "defense": 10,
+            "defence": 10,
             "speed": 10,
         })
 
@@ -295,8 +295,59 @@ class Dark_Paladin(Enemy):
             "health": 110,
             "mana": 30,
             "attack": 28,
-            "defense": 15,
+            "defence": 15,
             "speed": 6,
+        })
+
+#Bosses
+class GoblinKing(Enemy):
+    def __init__(self):
+        super().__init__("Goblin King", {
+            "health": 80,
+            "mana": 50,
+            "attack": 30,
+            "defence": 10,
+            "speed": 7,
+        })
+
+class ElementalLord(Enemy):
+    def __init__(self):
+        super().__init__("Elemental Lord", {
+            "health": 180,
+            "mana": 100,
+            "attack": 35,
+            "defence": 12,
+            "speed": 8,
+        })
+
+class Dragon(Enemy):
+    def __init__(self):
+        super().__init__("Dragon", {
+            "health": 220,
+            "mana": 80,
+            "attack": 40,
+            "defence": 15,
+            "speed": 6,
+        })
+
+class FallenRoyalGuard(Enemy):
+    def __init__(self):
+        super().__init__("Fallen Royal Guard", {
+            "health": 250,
+            "mana": 70,
+            "attack": 45,
+            "defence": 18,
+            "speed": 5,
+        })
+
+class FallenArchangel(Enemy):
+    def __init__(self):
+        super().__init__("Fallen Archangel", {
+            "health": 300,
+            "mana": 120,
+            "attack": 50,
+            "defence": 20,
+            "speed": 10,
         })
 
 FLOOR_ENEMY_TIERS = {
@@ -306,9 +357,20 @@ FLOOR_ENEMY_TIERS = {
 }
 
 
-
 def get_random_enemy_for_floor(floor):
-    if floor % 5 == 0:
+    if floor % 10 == 0:
+        boss_fight = {
+            10: GoblinKing,
+            20: ElementalLord,
+            30: Dragon,
+            40: FallenRoyalGuard,
+            50: FallenArchangel,
+        }
+        boss_class = boss_fight.get(floor)
+        if boss_class:
+            boss = boss_class()
+            boss.scale_stats(floor)
+            return boss
         return None
 
     if floor <= 19:
@@ -424,8 +486,13 @@ def start_floor(floor):
     floor_intro_start_time = pygame.time.get_ticks()
     game_state = STATE_FLOOR_INTRO
     selected_enemy = None
-    enemy_pool = get_enemy_pool_for_floor(current_floor)
-    floor_enemies = generate_enemies_for_floor(current_floor, enemy_pool)
+
+    if floor % 10 == 0:
+        boss = get_random_enemy_for_floor(floor)
+        floor_enemies = [boss] if boss else []
+    else:
+        enemy_pool = get_enemy_pool_for_floor(current_floor)
+        floor_enemies = generate_enemies_for_floor(current_floor, enemy_pool)
 
 def draw_floor_intro_screen():
     screen.fill(DARK_GRAY)
@@ -441,6 +508,9 @@ STATE_STATS = "stats"
 STATE_GAME = "game"
 STATE_FLOOR_INTRO = "floor_intro"
 STATE_GAME_OVER = "game_over"
+STATE_UPGRADE = "upgrade"
+
+
 
 
 game_state = STATE_TITLE
@@ -647,6 +717,64 @@ def draw_combat_log():
 
 
 
+#Upgrade system
+upgrade_options = []
+show_upgrade_popup = False
+selected_upgrade_index = None
+show_next_floor_button = False
+
+upgrade_popup_rect = pygame.Rect(SCREEN_WIDTH // 2 - 350, SCREEN_HEIGHT // 2 - 250, 700, 500)
+
+confirm_upgrade_button_rect = None
+upgrade_button_rects = []
+
+
+
+
+#Button going to the next floor
+next_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 160, 200, 60)
+
+def generate_stat_upgrades():
+    global upgrade_options, selected_upgrade_index
+    all_stats = ["health", "mana", "attack", "defence", "speed"]
+    upgrade_options = random.sample(all_stats, 4)
+    selected_upgrade_index = None
+
+#Draw upgrade popup
+def draw_upgrade_popup():
+    global upgrade_popup_rect, confirm_upgrade_button_rect, upgrade_button_rects
+
+    popup_width = 700
+    popup_height = 500
+    popup_x = SCREEN_WIDTH // 2 - popup_width // 2
+    popup_y = SCREEN_HEIGHT // 2 - popup_height // 2
+    upgrade_popup_rect = pygame.Rect(popup_x, popup_y, popup_width, popup_height)
+
+    #Resets button rects
+    upgrade_button_rects.clear()
+
+    #Popup background
+    pygame.draw.rect(screen, DARK_GRAY, upgrade_popup_rect)
+    pygame.draw.rect(screen, WHITE, upgrade_popup_rect, 3)
+
+    title = font.render("Choose a Stat to Upgrade", True, WHITE)
+    screen.blit(title, title.get_rect(center=(SCREEN_WIDTH // 2, popup_y + 40)))
+
+    for i, stat in enumerate(upgrade_options):
+        rect = pygame.Rect(popup_x + 50, popup_y + 100 + i * 80, 600, 60)
+        upgrade_button_rects.append(rect)
+
+        pygame.draw.rect(screen, GRAY, rect)
+        pygame.draw.rect(screen, YELLOW if selected_upgrade_index == i else WHITE, rect, 3)
+
+        start_text = font.render(f"+10 {stat.capitalize()}", True, WHITE)
+        screen.blit(start_text, start_text.get_rect(center=rect.center))
+
+    if selected_upgrade_index is not None:
+        confirm_upgrade_button_rect = pygame.Rect(popup_x + 250, popup_y + 430, 200, 40)
+        draw_button(confirm_upgrade_button_rect, "Confirm")
+    else:
+        confirm_upgrade_button_rect = None
 
 
 
@@ -736,9 +864,25 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
 
+                if show_upgrade_popup:
+
+                    for i, rect in enumerate(upgrade_button_rects):
+                        if rect.collidepoint(mouse_pos):
+                            selected_upgrade_index = i
+                            break
+
+                    if (
+                        selected_upgrade_index is not None
+                        and confirm_upgrade_button_rect
+                        and confirm_upgrade_button_rect.collidepoint(mouse_pos)
+                    ):
+                        chosen_stat = upgrade_options[selected_upgrade_index]
+                        selected_class.stats[chosen_stat] += 10
+                        show_upgrade_popup = False
+                        start_floor(current_floor + 1)
+
                 if targeting_mode:
                     for enemy, enemy_rect in enemy_hitboxes:
-
                         if enemy_rect.collidepoint(mouse_pos):
                             damage = 100  # change later to attack
                             enemy.stats["health"] -= damage
@@ -753,6 +897,11 @@ while running:
                             #Rebuild hitboxes
                             enemy_hitboxes = []
                             draw_enemies(floor_enemies)
+
+                            #Check if there are no more enemies
+                            if not floor_enemies:
+                                show_upgrade_popup = True
+                                upgrade_options = random.sample(["health", "mana", "attack", "defence", "speed"], 4)
 
                             player_ap -= 1
                             player_turn = player_ap > 0
@@ -806,7 +955,7 @@ while running:
                     global player_turn, player_ap
 
                     for enemy in floor_enemies:
-                        damage = max(0, enemy.stats["attack"] - selected_class.stats["defense"])
+                        damage = max(0, enemy.stats["attack"] - selected_class.stats["defence"])
                         selected_class.stats["health"] -= damage
                         log_msg = f"{enemy.name} attacks for {damage} damage"
                         print(log_msg)
@@ -848,6 +997,9 @@ while running:
         draw_game_screen()
         draw_main_character()
         draw_combat_log()
+
+        if show_upgrade_popup:
+            draw_upgrade_popup()
 
 
     if show_quit_popup:

@@ -101,6 +101,7 @@ def draw_stats_popup():
         stat_y += 40
 
 show_attack_options = False
+combat_menu_state = None
 
 #Big box for action buttons
 action_menu_rect = pygame.Rect(SCREEN_WIDTH // 2 -200, SCREEN_HEIGHT - 300, 400, 200)
@@ -115,11 +116,15 @@ button_spacing_y = 20
 menu_x = action_menu_rect.x + 20
 menu_y = action_menu_rect.y + 20
 
-#2x2 layout for buttons
-attack_option_button_rect = pygame.Rect(menu_x, menu_y, button_width, button_height)
-spell_option_button_rect = pygame.Rect(menu_x + button_width + button_spacing_x, menu_y, button_width, button_height)
-future1_button_rect = pygame.Rect(menu_x, menu_y + button_height + button_spacing_y, button_width, button_height)
-future2_button_rect = pygame.Rect(menu_x + button_width + button_spacing_x, menu_y + button_height + button_spacing_y, button_width, button_height)
+#Root buttons
+attack_root_button_rect = pygame.Rect(action_menu_rect.x + 20, action_menu_rect.y + 30, 360, 60)
+spell_root_button_rect = pygame.Rect(action_menu_rect.x + 20, action_menu_rect.y + 110, 360, 60)
+
+#Submenu buttons
+attack_sub_button_1 = pygame.Rect(menu_x, menu_y, button_width, button_height)
+attack_sub_button_2 = pygame.Rect(menu_x + button_width + button_spacing_x, menu_y, button_width, button_height)
+attack_sub_button_3 = pygame.Rect(menu_x, menu_y + button_height + button_spacing_y, button_width, button_height)
+attack_sub_button_4 = pygame.Rect(menu_x + button_width + button_spacing_x, menu_y + button_height + button_spacing_y, button_width, button_height)
 
 #Enemies
 class Enemy:
@@ -528,22 +533,32 @@ def draw_game_screen():
         screen.blit(health_text, (padding, padding))
         screen.blit(mana_text, (padding, padding + health_text.get_height() + 5))
 
-    if show_attack_options:
-        #Draw the larger menu box
+    if combat_menu_state:
         pygame.draw.rect(screen, DARK_GRAY, action_menu_rect)
-        pygame.draw.rect(screen, WHITE, action_menu_rect, 3) #boarder
+        pygame.draw.rect(screen, WHITE, action_menu_rect, 3)
 
-        for rect, label in [
-            (attack_option_button_rect, "Attack"),
-            (spell_option_button_rect, "Spell"),
-            (future1_button_rect, "_"),
-            (future2_button_rect, "_"),
-        ]:
-            pygame.draw.rect(screen, GRAY, rect)
-            pygame.draw.rect(screen, WHITE, rect, 2)
-            text_surface = font.render(label, True, WHITE)
-            text_rect = text_surface.get_rect(center=rect.center)
-            screen.blit(text_surface, text_rect)
+        if combat_menu_state == "root":
+            #2 large buttons
+            for rect, label in [
+                (attack_root_button_rect, "Attack"),
+                (spell_root_button_rect, "Spell"),
+            ]:
+                pygame.draw.rect(screen, GRAY, rect)
+                pygame.draw.rect(screen, WHITE, rect, 3)
+                text_surface = font.render(label, True, WHITE)
+                text_rect = text_surface.get_rect(center=rect.center)
+                screen.blit(text_surface, text_rect)
+
+        elif combat_menu_state in ("attack", "spell"):
+            #4 option buttons
+            labels = ["Option 1", "Option 2", "Option 3", "Option 4"]
+            rect = [attack_sub_button_1, attack_sub_button_2, attack_sub_button_3 , attack_sub_button_4]
+            for rect, label in zip(rect, labels):
+                pygame.draw.rect(screen, GRAY, rect)
+                pygame.draw.rect(screen, WHITE, rect, 2)
+                text_surface = font.render(label, True, WHITE)
+                text_rect = text_surface.get_rect(center=rect.center)
+                screen.blit(text_surface, text_rect)
 
     if show_stats_popup:
         draw_stats_popup()
@@ -607,11 +622,39 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
                 if attack_button_rect.collidepoint(mouse_pos):
+                    combat_menu_state = "root" #Open root menu
+
+                elif combat_menu_state == "root":
+                    if attack_root_button_rect.collidepoint(mouse_pos):
+                        combat_menu_state = "attack"
+                    elif spell_root_button_rect.collidepoint(mouse_pos):
+                        combat_menu_state = "spell"
+
+                elif combat_menu_state in ("attack", "spell"):
+                    if attack_sub_button_1.collidepoint(mouse_pos):
+                        print("Option 1 selected")
+                        combat_menu_state = None
+                    elif attack_sub_button_2.collidepoint(mouse_pos):
+                        print("Option 2 selected")
+                        combat_menu_state = None
+                    elif attack_sub_button_3.collidepoint(mouse_pos):
+                        print("Option 3 selected")
+                        combat_menu_state = None
+                    elif attack_sub_button_4.collidepoint(mouse_pos):
+                        print("Option 4 selected")
+                        combat_menu_state = None
+
+                #Click outside closes menu
+                elif combat_menu_state and not action_menu_rect.collidepoint(mouse_pos):
+                    combat_menu_state = None
+
+
+                elif attack_button_rect.collidepoint(mouse_pos):
                     show_attack_options = not show_attack_options
-                elif show_attack_options and attack_option_button_rect.collidepoint(mouse_pos):
+                elif show_attack_options and attack_root_button_rect.collidepoint(mouse_pos):
                     print("Basic attack selected")
                     show_attack_options = False #Hides options after selecting
-                elif show_attack_options and spell_option_button_rect.collidepoint(mouse_pos):
+                elif show_attack_options and spell_root_button_rect.collidepoint(mouse_pos):
                     print("Spell option selected")
                     show_attack_options = False
                 elif not attack_button_rect.collidepoint(mouse_pos):

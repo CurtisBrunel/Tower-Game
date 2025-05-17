@@ -30,6 +30,25 @@ BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 
+show_quit_popup = False
+quit_popup_rect = pygame.Rect(SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 100, 400, 200)
+yes_button_rect = pygame.Rect(quit_popup_rect.x +  40, quit_popup_rect.y + 120, 120, 40)
+no_button_rect = pygame.Rect(quit_popup_rect.x +  240, quit_popup_rect.y + 120, 120, 40)
+
+def draw_quit_popup():
+    pygame.draw.rect(screen, DARK_GRAY, quit_popup_rect)
+    pygame.draw.rect(screen, WHITE, quit_popup_rect, 3)
+
+    prompt_text = font.render('Do you want to quit?', True, WHITE)
+    prompt_rect = prompt_text.get_rect(center=(quit_popup_rect.centerx, quit_popup_rect.y + 50))
+    screen.blit(prompt_text, prompt_rect)
+
+    for rect, label in [(yes_button_rect, "Yes"), (no_button_rect, "No")]:
+        pygame.draw.rect(screen, GRAY, rect)
+        pygame.draw.rect(screen, WHITE, rect, 2)
+        text = font.render(label, True, WHITE)
+        screen.blit(text, text.get_rect(center=rect.center))
+
 
 #Character and Stats
 class CharacterClass:
@@ -416,7 +435,8 @@ STATE_FLOOR_INTRO = "floor_intro"
 game_state = STATE_TITLE
 
 #Add start button
-start_game_button_rect = pygame.Rect(SCREEN_WIDTH - 210, SCREEN_HEIGHT - 110, 200, 60)
+start_game_button_rect = pygame.Rect(SCREEN_WIDTH - 240, SCREEN_HEIGHT - 110, 200, 60)
+back_button_rect = pygame.Rect(50, SCREEN_HEIGHT - 110, 200, 60)
 
 #Combat buttons
 attack_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 310, SCREEN_HEIGHT - 100, 200, 60)
@@ -439,6 +459,7 @@ rogue = Rogue()
 #Buttons location
 start_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, 300, 200, 60)
 quit_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, 400, 200, 60)
+
 
 def draw_button(rect, text):
     pygame.draw.rect(screen, GRAY, rect)#
@@ -509,6 +530,7 @@ def draw_stats_screen():
 
     #Draw START button
     draw_button(start_game_button_rect, "Start")
+    draw_button(back_button_rect, "Back")
 
 
 def draw_game_screen():
@@ -574,10 +596,26 @@ while running:
         #ESC key to close game
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                if show_stats_popup:
+                if show_quit_popup:
+                    show_quit_popup = False
+                elif show_stats_popup:
                     show_stats_popup = False
+                elif combat_menu_state:
+                    combat_menu_state = None
                 else:
-                    running = False
+                    show_quit_popup = True
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pygame.mouse.get_pos()
+
+            if show_quit_popup:
+                if yes_button_rect.collidepoint(mouse_pos):
+                    pygame.quit()
+                    sys.exit()
+                elif no_button_rect.collidepoint(mouse_pos):
+                    show_quit_popup = False
+                continue
+
 
         #Transition
         if game_state == STATE_TITLE:
@@ -610,6 +648,9 @@ while running:
                 mouse_pos = pygame.mouse.get_pos()
                 if start_game_button_rect.collidepoint(mouse_pos):
                     start_floor(1)
+                elif back_button_rect.collidepoint(mouse_pos):
+                    game_state = STATE_CHARACTER_SELECTION
+                    selected_class = None
 
         elif game_state == STATE_FLOOR_INTRO:
             draw_floor_intro_screen()
@@ -617,10 +658,14 @@ while running:
             if now - floor_intro_start_time >= FLOOR_INTRO_DURATION:
                 print("Floor intro ended, switching to STATE_GAME")
                 game_state = STATE_GAME
+            pygame.display.flip()
+            clock.tick(60)
+            continue
 
         elif game_state == STATE_GAME:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
+
                 if attack_button_rect.collidepoint(mouse_pos):
                     combat_menu_state = "root" #Open root menu
 
@@ -694,6 +739,10 @@ while running:
     elif game_state == STATE_GAME:
         draw_game_screen()
         draw_main_character()
+
+
+    if show_quit_popup:
+        draw_quit_popup()
 
 
 

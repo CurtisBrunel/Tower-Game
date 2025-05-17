@@ -431,12 +431,15 @@ STATE_CHARACTER_SELECTION = "character_selection"
 STATE_STATS = "stats"
 STATE_GAME = "game"
 STATE_FLOOR_INTRO = "floor_intro"
+STATE_GAME_OVER = "game_over"
+
 
 game_state = STATE_TITLE
 
-#Add start button
+#Buttons
 start_game_button_rect = pygame.Rect(SCREEN_WIDTH - 240, SCREEN_HEIGHT - 110, 200, 60)
 back_button_rect = pygame.Rect(50, SCREEN_HEIGHT - 110, 200, 60)
+quit_to_menu_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 110, 200, 60)
 
 #Combat buttons
 attack_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 310, SCREEN_HEIGHT - 100, 200, 60)
@@ -482,6 +485,14 @@ def draw_start_screen():
 mage_box = pygame.Rect(0, 0, 0, 0)
 warrior_box = pygame.Rect(0, 0, 0, 0)
 rogue_box = pygame.Rect(0, 0, 0, 0)
+
+def draw_game_over_screen():
+    screen.fill(DARK_GRAY)
+
+    game_over_text = font.render("Game Over", True, WHITE)
+    screen.blit(game_over_text, game_over_text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)))
+
+    draw_button(quit_to_menu_button_rect, "Quit to Menu")
 
 
 def draw_character_selection():
@@ -585,6 +596,19 @@ def draw_game_screen():
     if show_stats_popup:
         draw_stats_popup()
 
+
+#Comabt system
+player_turn = True
+player_ap = 3
+
+
+
+
+
+
+
+
+
 #Game Loop
 running = True
 while running:
@@ -666,53 +690,56 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
 
-                if attack_button_rect.collidepoint(mouse_pos):
-                    combat_menu_state = "root" #Open root menu
+                if player_turn:
+                    if player_ap > 0:
+                        if attack_button_rect.collidepoint(mouse_pos):
+                            combat_menu_state = "root" #Open root menu
 
-                elif combat_menu_state == "root":
-                    if attack_root_button_rect.collidepoint(mouse_pos):
-                        combat_menu_state = "attack"
-                    elif spell_root_button_rect.collidepoint(mouse_pos):
-                        combat_menu_state = "spell"
+                        elif combat_menu_state == "root":
+                            if attack_root_button_rect.collidepoint(mouse_pos):
+                                combat_menu_state = "attack"
+                            elif spell_root_button_rect.collidepoint(mouse_pos):
+                                combat_menu_state = "spell"
 
-                elif combat_menu_state in ("attack", "spell"):
-                    if attack_sub_button_1.collidepoint(mouse_pos):
-                        print("Option 1 selected")
-                        combat_menu_state = None
-                    elif attack_sub_button_2.collidepoint(mouse_pos):
-                        print("Option 2 selected")
-                        combat_menu_state = None
-                    elif attack_sub_button_3.collidepoint(mouse_pos):
-                        print("Option 3 selected")
-                        combat_menu_state = None
-                    elif attack_sub_button_4.collidepoint(mouse_pos):
-                        print("Option 4 selected")
-                        combat_menu_state = None
+                        elif combat_menu_state in ("attack", "spell"):
+                            for i, btn in enumerate([attack_sub_button_1, attack_sub_button_2, attack_sub_button_3, attack_sub_button_4], 1):
+                                if btn.collidepoint(mouse_pos):
+                                    print(f"Option {i} selected")
+                                    player_ap -= 1
+                                    combat_menu_state = None
+                                    break
+                        elif stats_button_rect.collidepoint(mouse_pos):
+                            show_stats_popup = not show_stats_popup
+                        elif item_button_rect.collidepoint(mouse_pos):
+                            print("Item Selected")
+                        elif combat_menu_state and not action_menu_rect.collidepoint(mouse_pos):
+                            combat_menu_state = None
 
-                #Click outside closes menu
-                elif combat_menu_state and not action_menu_rect.collidepoint(mouse_pos):
-                    combat_menu_state = None
+                    if player_ap <= 0:
+                        player_turn = False
 
-
-                elif attack_button_rect.collidepoint(mouse_pos):
-                    show_attack_options = not show_attack_options
-                elif show_attack_options and attack_root_button_rect.collidepoint(mouse_pos):
-                    print("Basic attack selected")
-                    show_attack_options = False #Hides options after selecting
-                elif show_attack_options and spell_root_button_rect.collidepoint(mouse_pos):
-                    print("Spell option selected")
-                    show_attack_options = False
-                elif not attack_button_rect.collidepoint(mouse_pos):
-                    show_attack_options = False #Click outside hides menu
-
-                elif stats_button_rect.collidepoint(mouse_pos):
-                    show_stats_popup = not show_stats_popup
-                elif item_button_rect.collidepoint(mouse_pos):
-                    print("Item selected")
-
-            if event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE and show_stats_popup:
                     show_stats_popup = False
+
+            if not player_turn:
+                def enemy_turn():
+                    global player_turn, player_ap
+
+                    for enemy in floor_enemies:
+                        damage = max(0, enemy.stats["attack"] - selected_class.stats["defense"])
+                        selected_class.stats["health"] -= damage
+                        print(f"{enemy.name} attacks for {damage} damage")
+
+                    player_turn = True
+                    player_ap = 3
+
+
+                enemy_turn()
+
+            if selected_class and selected_class.stats["health"] <= 0:
+                game_state = STATE_GAME_OVER
+
 
 
 

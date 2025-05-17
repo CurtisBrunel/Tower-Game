@@ -1,4 +1,5 @@
 
+
 import pygame
 import sys
 import random
@@ -29,6 +30,7 @@ DARK_GRAY = (50, 50, 50)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+YELLOW = (255, 255, 0)
 
 show_quit_popup = False
 quit_popup_rect = pygame.Rect(SCREEN_WIDTH // 2 - 200, SCREEN_HEIGHT // 2 - 100, 400, 200)
@@ -323,7 +325,7 @@ def get_random_enemy_for_floor(floor):
     return enemy
 
 def generate_enemies_for_floor(floor, enemy_pool):
-    num_enemies = random.randint(2, 4)
+    num_enemies = random.randint(3, 4)
     enemies = []
 
     for i in range(num_enemies):
@@ -349,26 +351,33 @@ def get_enemy_pool_for_floor(floor):
     else:
         return []
 
-def draw_enemies(enemies):
+def draw_enemies(floor_enemies):
+    global enemy_hitboxes
+    enemy_hitboxes = []
+
+
     enemy_box_width = 50
     enemy_box_height = 50
     spacing_y = 30
-    top_margin = 100
+    top_margin = 270
 
     name_font = pygame.font.SysFont("Arial", 15)
-    hp_font = pygame.font.SysFont("Arial", 10)
+    hp_font = pygame.font.SysFont("Arial", 12)
 
     left_x = SCREEN_WIDTH // 2 + 200
     right_x = SCREEN_WIDTH - 170
 
 
-    for index, enemy in enumerate(enemies):
+    for index, enemy in enumerate(floor_enemies):
 
         x = left_x if index % 2 == 0 else right_x
         y = top_margin + index * (enemy_box_height + spacing_y)
 
         #Enemy box
         enemy_rect = pygame.Rect(x, y, enemy_box_width, enemy_box_height)
+        enemy_hitboxes.append((enemy, enemy_rect))
+
+        #Draw enemy box
         pygame.draw.rect(screen, WHITE, enemy_rect)
 
         #Draw name of enemy
@@ -561,10 +570,18 @@ def draw_game_screen():
 
         health_text = font.render(f"HP: {health}", True, WHITE)
         mana_text = font.render(f"MANA: {mana}", True, WHITE)
+        ap_text = font.render(f"AP: {player_ap}", True, WHITE)
 
         padding = 20
+        spacing = 5
+
         screen.blit(health_text, (padding, padding))
-        screen.blit(mana_text, (padding, padding + health_text.get_height() + 5))
+
+        mana_y = padding + health_text.get_height() + spacing
+        screen.blit(mana_text, (padding, mana_y))
+
+        ap_y = mana_y + mana_text.get_height() + spacing
+        screen.blit(ap_text, (padding, ap_y))
 
     if combat_menu_state:
         pygame.draw.rect(screen, DARK_GRAY, action_menu_rect)
@@ -600,6 +617,35 @@ def draw_game_screen():
 #Comabt system
 player_turn = True
 player_ap = 3
+targeting_mode = False
+pending_attack_option = None
+floor_enemies = []
+selected_enemy = None
+combat_log = []
+enemy_hitboxes = []
+
+def draw_combat_log():
+    log_font = pygame.font.SysFont("Arial", 20)
+    max_lines = 6
+    line_spacing = 25
+
+    log_width = 500
+    log_height = max_lines * line_spacing + 20
+
+    log_x = SCREEN_WIDTH - log_width - 20
+    log_y = 20
+
+    #Background panel
+    log_bg_rect = pygame.Rect(log_x - 10, log_y - 10, log_width, log_height)
+    pygame.draw.rect(screen, DARK_GRAY, log_bg_rect)
+    pygame.draw.rect(screen, WHITE, log_bg_rect, 2)
+
+    recent_logs = combat_log[-max_lines:]
+    for i, line in enumerate(recent_logs):
+        log_text = log_font.render(line, True, WHITE)
+        screen.blit(log_text, (log_x, log_y + i * line_spacing))
+
+
 
 
 
@@ -690,7 +736,31 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
 
-                if player_turn:
+                if targeting_mode:
+                    for enemy, enemy_rect in enemy_hitboxes:
+
+                        if enemy_rect.collidepoint(mouse_pos):
+                            damage = 100  # change later to attack
+                            enemy.stats["health"] -= damage
+
+                            log_msg = f"{selected_class.name} hits {enemy.name}  for {damage} damage!"
+                            print(log_msg)
+                            combat_log.append(log_msg)
+
+                            #Removes dead enemies
+                            floor_enemies = [enemy for enemy in floor_enemies if enemy.stats["health"] > 0]
+
+                            #Rebuild hitboxes
+                            enemy_hitboxes = []
+                            draw_enemies(floor_enemies)
+
+                            player_ap -= 1
+                            player_turn = player_ap > 0
+                            targeting_mode = False
+                            pending_attack_option = None
+                            break
+
+                elif player_turn:
                     if player_ap > 0:
                         if attack_button_rect.collidepoint(mouse_pos):
                             combat_menu_state = "root" #Open root menu
@@ -704,16 +774,22 @@ while running:
                         elif combat_menu_state in ("attack", "spell"):
                             for i, btn in enumerate([attack_sub_button_1, attack_sub_button_2, attack_sub_button_3, attack_sub_button_4], 1):
                                 if btn.collidepoint(mouse_pos):
-                                    print(f"Option {i} selected")
-                                    player_ap -= 1
+                                    log_msg = f"Option {i} selected"
+                                    print(log_msg)
+                                    combat_log.append(log_msg)
+                                    targeting_mode = True # player must not select a target
+                                    pending_attack_option = i
                                     combat_menu_state = None
                                     break
                         elif stats_button_rect.collidepoint(mouse_pos):
                             show_stats_popup = not show_stats_popup
                         elif item_button_rect.collidepoint(mouse_pos):
-                            print("Item Selected")
+                            log_msg = f"Item Selected"
+                            print(log_msg)
+                            combat_log.append(log_msg)
                         elif combat_menu_state and not action_menu_rect.collidepoint(mouse_pos):
                             combat_menu_state = None
+
 
                     if player_ap <= 0:
                         player_turn = False
@@ -722,6 +798,9 @@ while running:
                 if event.key == pygame.K_ESCAPE and show_stats_popup:
                     show_stats_popup = False
 
+
+
+
             if not player_turn:
                 def enemy_turn():
                     global player_turn, player_ap
@@ -729,7 +808,9 @@ while running:
                     for enemy in floor_enemies:
                         damage = max(0, enemy.stats["attack"] - selected_class.stats["defense"])
                         selected_class.stats["health"] -= damage
-                        print(f"{enemy.name} attacks for {damage} damage")
+                        log_msg = f"{enemy.name} attacks for {damage} damage"
+                        print(log_msg)
+                        combat_log.append(log_msg)
 
                     player_turn = True
                     player_ap = 3
@@ -766,6 +847,7 @@ while running:
     elif game_state == STATE_GAME:
         draw_game_screen()
         draw_main_character()
+        draw_combat_log()
 
 
     if show_quit_popup:

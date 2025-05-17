@@ -64,31 +64,31 @@ class CharacterClass:
 class MAGE(CharacterClass):
     def __init__(self):
         super().__init__("Mage", {
-            "health": None,
-            "mana": None,
-            "attack": None,
-            "defense": None,
-            "speed": None,
+            "health": 60,
+            "mana": 120,
+            "attack": 20,
+            "defense": 5,
+            "speed": 8,
         })
 
 class Warrior(CharacterClass):
     def __init__(self):
         super().__init__("Warrior", {
-            "health": None,
-            "mana": None,
-            "attack": None,
-            "defense": None,
-            "speed": None,
+            "health": 100,
+            "mana": 40,
+            "attack": 25,
+            "defense": 5,
+            "speed": 8,
         })
 
 class Rogue(CharacterClass):
     def __init__(self):
         super().__init__("Rogue", {
-            "health": None,
-            "mana": None,
-            "attack": None,
-            "defense": None,
-            "speed": None,
+            "health": 80,
+            "mana": 60,
+            "attack": 18,
+            "defense": 8,
+            "speed": 12,
         })
 
 
@@ -160,147 +160,147 @@ class Enemy:
 class Goblin(Enemy):
     def __init__(self):
         super().__init__("Goblin", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
-            "defense": 5,
-            "speed": 5,
+            "health": 40,
+            "mana": 10,
+            "attack": 8,
+            "defense": 2,
+            "speed": 10,
         })
 
 class SkeletonWarrior(Enemy):
     def __init__(self):
         super().__init__("Skeleton Warrior", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
-            "defense": 5,
-            "speed": 5,
+            "health": 50,
+            "mana": 20,
+            "attack": 10,
+            "defense": 4,
+            "speed": 6,
         })
 
 class GiantRat(Enemy):
     def __init__(self):
         super().__init__("Giant Rat", {
-            "health": 5,
+            "health": 35,
             "mana": 5,
-            "attack": 5,
-            "defense": 5,
-            "speed": 5,
+            "attack": 7,
+            "defense": 2,
+            "speed": 9,
         })
 
 class BatSwarm(Enemy):
     def __init__(self):
         super().__init__("Bat Swarm", {
-            "health": 5,
-            "mana": 5,
+            "health": 30,
+            "mana": 0,
             "attack": 5,
-            "defense": 5,
-            "speed": 5,
+            "defense":1,
+            "speed": 12,
         })
 
 class Orc(Enemy):
     def __init__(self):
         super().__init__("Orc", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
-            "defense": 5,
+            "health": 60,
+            "mana": 10,
+            "attack": 12,
+            "defense": 6,
             "speed": 5,
         })
 
 class Spider(Enemy):
     def __init__(self):
         super().__init__("Spider", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
-            "defense": 5,
-            "speed": 5,
+            "health": 40,
+            "mana": 10,
+            "attack": 8,
+            "defense": 3,
+            "speed": 8,
         })
 
 class CursedKnight(Enemy):
     def __init__(self):
         super().__init__("Cursed Knight", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
-            "defense": 5,
+            "health": 80,
+            "mana": 30,
+            "attack": 18,
+            "defense": 10,
             "speed": 5,
         })
 
 class Minitor(Enemy):
     def __init__(self):
         super().__init__("Minitor", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
-            "defense": 5,
-            "speed": 5,
+            "health": 90,
+            "mana": 10,
+            "attack": 22,
+            "defense": 12,
+            "speed": 4,
         })
 
 class Necromancer(Enemy):
     def __init__(self):
         super().__init__("Necromancer", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
-            "defense": 5,
-            "speed": 5,
+            "health": 70,
+            "mana": 60,
+            "attack": 15,
+            "defense": 6,
+            "speed": 7,
         })
 
 class DarkElf(Enemy):
     def __init__(self):
         super().__init__("Dark Elf", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
+            "health": 65,
+            "mana": 50,
+            "attack": 16,
             "defense": 5,
-            "speed": 5,
+            "speed": 11,
         })
 
 class Hydra(Enemy):
     def __init__(self):
         super().__init__("Hydra", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
-            "defense": 5,
+            "health": 120,
+            "mana": 40,
+            "attack": 25,
+            "defense": 12,
             "speed": 5,
         })
 
 class Lich(Enemy):
     def __init__(self):
         super().__init__("Lich", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
-            "defense": 5,
-            "speed": 5,
+            "health": 90,
+            "mana": 100,
+            "attack": 30,
+            "defense": 10,
+            "speed": 7,
         })
 
 class VampireLord(Enemy):
     def __init__(self):
         super().__init__("Vampire Lord", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
-            "defense": 5,
-            "speed": 5,
+            "health": 100,
+            "mana": 80,
+            "attack": 22,
+            "defense": 10,
+            "speed": 10,
         })
 
-class DarkPalidin(Enemy):
+class Dark_Paladin(Enemy):
     def __init__(self):
-        super().__init__("Dark Palidin", {
-            "health": 5,
-            "mana": 5,
-            "attack": 5,
-            "defense": 5,
-            "speed": 5,
+        super().__init__("Dark Paladin", {
+            "health": 110,
+            "mana": 30,
+            "attack": 28,
+            "defense": 15,
+            "speed": 6,
         })
 
 FLOOR_ENEMY_TIERS = {
     "low": [Goblin, SkeletonWarrior, GiantRat, BatSwarm, Orc, Spider],
     "mid": [Spider, CursedKnight, Minitor, Necromancer, DarkElf],
-    "high": [Hydra, Lich, DarkPalidin, VampireLord],
+    "high": [Hydra, Lich, Dark_Paladin, VampireLord],
 }
 
 

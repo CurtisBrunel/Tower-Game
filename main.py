@@ -82,6 +82,8 @@ class Warrior(CharacterClass):
             "defence": 5,
             "speed": 8,
         })
+        self.starting_attack = "Heavy Slash"
+        self.starting_spell = ""
 
 class Rogue(CharacterClass):
     def __init__(self):
@@ -92,6 +94,8 @@ class Rogue(CharacterClass):
             "defence": 8,
             "speed": 12,
         })
+        self.starting_attack = "Quick Stab"
+        self.starting_spell = ""
 
 
 show_stats_popup = False
@@ -760,9 +764,15 @@ def draw_game_screen():
                                    button_width, button_height)
                 pygame.draw.rect(screen, GRAY, rect)
                 pygame.draw.rect(screen, WHITE, rect, 2)
-                text_surface = font.render(attack, True, WHITE)
+
+                if isinstance(attack, str):
+                    player_attacks[i] = {"name": attack, "rect": rect}
+                else:
+                    attack["rect"] = rect
+
+                text_surface = font.render(player_attacks[i]["name"], True, WHITE)
                 screen.blit(text_surface, text_surface.get_rect(center=rect.center))
-                player_attacks[i] = {"name": attack, "rect": rect}
+
 
         elif combat_menu_state == "spell":
             for i, spell in enumerate(player_spells[:4]):
@@ -771,9 +781,17 @@ def draw_game_screen():
                                    button_width, button_height)
                 pygame.draw.rect(screen, GRAY, rect)
                 pygame.draw.rect(screen, WHITE, rect, 2)
-                text_surface = font.render(spell, True, WHITE)
+
+
+                if isinstance(spell, str):
+                    player_spells[i] = {"name": spell, "rect": rect}
+                else:
+                    spell["rect"] = rect
+
+                text_surface = font.render(player_spells[i]["name"], True, WHITE)
                 screen.blit(text_surface, text_surface.get_rect(center=rect.center))
-                player_spells[i] = {"name": spell, "rect": rect}
+
+
 
 
     if show_stats_popup:
@@ -869,6 +887,26 @@ def initialise_abilities(class_name):
 
 
 def get_locked_abilities():
+    if not selected_class:
+        return []
+
+    class_name = selected_class.name
+    if class_name not in CLASS_ABILITIES:
+        return []
+
+    class_abilities = CLASS_ABILITIES[class_name]
+
+    #Flatten current known abilities
+    known_abilities = set(player_attacks + player_spells)
+
+    #Combine class-specific abilities
+    all_class_abilities = class_abilities["attacks"] + class_abilities["spells"]
+
+    #Return only abilities the player hasn't learned yet
+    locked_abilities = [ability for ability in all_class_abilities if ability not in known_abilities]
+    return locked_abilities
+
+
     unlocked = set(player_attacks + player_spells)
     class_abilities = CLASS_ABILITIES[selected_class.name]
     locked = [
@@ -885,7 +923,6 @@ def generate_stat_upgrades():
 
     all_stats = ["health", "mana", "attack", "defence", "speed"]
     all_items = ITEM_POOL
-    all_abilities = ["Double Strike"]
 
     for i in range (4):
         upgrade_type = random.choice(["stat", "item", "ability"])
@@ -1051,6 +1088,16 @@ while running:
                     selected_class = rogue
                     game_state = STATE_STATS
 
+                if selected_class:
+                    full_abilities = CLASS_ABILITIES[selected_class.name]
+                    selected_class.attacks = full_abilities["attacks"]
+                    selected_class.spells = full_abilities["spells"]
+                    player_attacks = [selected_class.attacks[0]]
+                    player_spells = [selected_class.spells[0]]
+
+                    game_state = STATE_STATS
+
+
         elif game_state == STATE_STATS:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
@@ -1133,13 +1180,20 @@ while running:
                             combat_log.append(f"Obtained item: {chosen['value']}")
 
                         elif chosen["type"] == "ability":
-                            player_abilities.append(chosen["value"])
-                            combat_log.append(f"Learned ability: {chosen['value']}")
+                            ability_name = chosen["value"]
+                            # Add ability to correct player list
+                            if ability_name in CLASS_ABILITIES[selected_class.name]["attacks"]:
+                                player_attacks.append(ability_name)
+                            elif ability_name in CLASS_ABILITIES[selected_class.name]["spells"]:
+                                player_spells.append(ability_name)
+
+                            combat_log.append(f"Learned ability: {ability_name}")
 
                         just_confirmed_upgrade = True
                         show_upgrade_popup = False
 
                         pygame.time.set_timer(pygame.USEREVENT + 1, 200)
+
 
 
 
@@ -1185,16 +1239,30 @@ while running:
                             elif spell_root_button_rect.collidepoint(mouse_pos):
                                 combat_menu_state = "spell"
 
-                        elif combat_menu_state in ("attack", "spell"):
-                            for i, btn in enumerate([attack_sub_button_1, attack_sub_button_2, attack_sub_button_3, attack_sub_button_4], 1):
-                                if btn.collidepoint(mouse_pos):
-                                    log_msg = f"Option {i} selected"
-                                    print(log_msg)
-                                    combat_log.append(log_msg)
-                                    targeting_mode = True # player must not select a target
-                                    pending_attack_option = i
+                        elif combat_menu_state == "attack":
+                            for ability in player_attacks:
+                                if isinstance(ability, dict) and "rect" in ability and ability["rect"].collidepoint(mouse_pos):
+                                    ability_name = ability["name"]
+                                    combat_log.append(f"Used Attack: {ability_name}")
+                                    player_attacks.remove(ability)
+                                    targeting_mode = True
+                                    pending_attack_option = ability_name
+                                    combat_menu_state= None
+                                    break
+
+                        elif combat_menu_state == "spell":
+                            for ability in player_spells:
+                                if isinstance(ability, dict) and ability["rect"].collidepoint(mouse_pos):
+                                    ability_name = ability["name"]
+                                    combat_log.append(f"Used Spell: {ability_name}")
+                                    player_spells.remove(ability)
+                                    targeting_mode = True
+                                    pending_attack_option = ability_name
                                     combat_menu_state = None
                                     break
+
+
+
                         elif stats_button_rect.collidepoint(mouse_pos):
                             show_stats_popup = not show_stats_popup
                         elif item_button_rect.collidepoint(mouse_pos):

@@ -387,7 +387,7 @@ def get_random_enemy_for_floor(floor):
     return enemy
 
 def generate_enemies_for_floor(floor, enemy_pool):
-    num_enemies = random.randint(3, 4)
+    num_enemies = random.randint(1, 1)
     enemies = []
 
     for i in range(num_enemies):
@@ -481,18 +481,29 @@ def draw_main_character():
     screen.blit(class_text, text_rect)
 
 def start_floor(floor):
-    global current_floor, floor_intro_start_time, game_state, floor_enemies, selected_enemy
+    global current_floor, floor_intro_start_time, game_state, floor_enemies, selected_enemy, break_room_action_taken
+
     current_floor = floor
     floor_intro_start_time = pygame.time.get_ticks()
-    game_state = STATE_FLOOR_INTRO
     selected_enemy = None
+
+    break_room_action_taken = False
+
+    # if floor %5 == 0 and floor % 10 != 0:
+    #     game_state = STATE_BREAK_ROOM
+    #     floor_enemies = []
+    #     return
+
+
 
     if floor % 10 == 0:
         boss = get_random_enemy_for_floor(floor)
-        floor_enemies = [boss] if boss else []
+        floor_enemies = [boss]
     else:
         enemy_pool = get_enemy_pool_for_floor(current_floor)
         floor_enemies = generate_enemies_for_floor(current_floor, enemy_pool)
+
+    game_state = STATE_FLOOR_INTRO
 
 def draw_floor_intro_screen():
     screen.fill(DARK_GRAY)
@@ -509,6 +520,7 @@ STATE_GAME = "game"
 STATE_FLOOR_INTRO = "floor_intro"
 STATE_GAME_OVER = "game_over"
 STATE_UPGRADE = "upgrade"
+STATE_BREAK_ROOM = "break_room"
 
 
 
@@ -524,6 +536,10 @@ quit_to_menu_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 
 attack_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 310, SCREEN_HEIGHT - 100, 200, 60)
 stats_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 100, 200, 60)
 item_button_rect = pygame.Rect(SCREEN_WIDTH // 2 + 110, SCREEN_HEIGHT - 100, 200, 60)
+
+#Upgrade Screen Button
+continue_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, 520, 200, 60)
+break_room_action_taken = False
 
 
 #Variable for character selection
@@ -723,12 +739,20 @@ show_upgrade_popup = False
 selected_upgrade_index = None
 show_next_floor_button = False
 
+just_confirmed_upgrade = False
+
 upgrade_popup_rect = pygame.Rect(SCREEN_WIDTH // 2 - 350, SCREEN_HEIGHT // 2 - 250, 700, 500)
 
 confirm_upgrade_button_rect = None
 upgrade_button_rects = []
 
-
+#Break Room
+break_room_option_rects = {
+    "Shop": pygame.Rect(SCREEN_WIDTH // 2 - 150, 200, 300, 60),
+    "Upgrade Skill": pygame.Rect(SCREEN_WIDTH // 2 - 150, 280, 300, 60),
+    "Heal": pygame.Rect(SCREEN_WIDTH // 2 - 150, 360, 300, 60),
+    "Upgrade Items": pygame.Rect(SCREEN_WIDTH // 2 - 150, 440, 300, 60)
+}
 
 
 #Button going to the next floor
@@ -778,7 +802,22 @@ def draw_upgrade_popup():
 
 
 
+def draw_break_room_screen():
+    screen.fill(DARK_GRAY)
+    title_text = font.render(f"Break Room - Floor {current_floor}", True, WHITE)
+    screen.blit(title_text, title_text.get_rect(center=(SCREEN_WIDTH // 2, 100)))
 
+    for label, rect in break_room_option_rects.items():
+        pygame.draw.rect(screen, GRAY, rect)
+        pygame.draw.rect(screen, WHITE, rect, 2)
+        text = font.render(label, True, WHITE)
+        screen.blit(text, text.get_rect(center=rect.center))
+
+    if break_room_action_taken:
+        pygame.draw.rect(screen, GRAY, continue_button_rect)
+        pygame.draw.rect(screen, WHITE, continue_button_rect, 2)
+        continue_text = font.render("Continue", True, WHITE)
+        screen.blit(continue_text, continue_text.get_rect(center=continue_button_rect.center))
 
 
 
@@ -813,6 +852,10 @@ while running:
                 elif no_button_rect.collidepoint(mouse_pos):
                     show_quit_popup = False
                 continue
+
+        elif event.type == pygame.USEREVENT + 1:
+            pygame.time.set_timer(pygame.USEREVENT + 1, 0)
+            start_floor(current_floor + 1)
 
 
         #Transition
@@ -871,15 +914,28 @@ while running:
                             selected_upgrade_index = i
                             break
 
+                    if just_confirmed_upgrade:
+                        continue
+
                     if (
                         selected_upgrade_index is not None
                         and confirm_upgrade_button_rect
                         and confirm_upgrade_button_rect.collidepoint(mouse_pos)
+                        and not just_confirmed_upgrade
                     ):
                         chosen_stat = upgrade_options[selected_upgrade_index]
                         selected_class.stats[chosen_stat] += 10
+                        just_confirmed_upgrade = True
                         show_upgrade_popup = False
-                        start_floor(current_floor + 1)
+
+
+                        if (current_floor + 1) % 5 == 0 and (current_floor + 1) % 10 != 0:
+                            game_state = STATE_BREAK_ROOM
+                            floor_enemies = []
+                            current_floor += 1
+                        else:
+                            pygame.time.set_timer(pygame.USEREVENT + 1, 200)
+
 
                 if targeting_mode:
                     for enemy, enemy_rect in enemy_hitboxes:
@@ -902,6 +958,9 @@ while running:
                             if not floor_enemies:
                                 show_upgrade_popup = True
                                 upgrade_options = random.sample(["health", "mana", "attack", "defence", "speed"], 4)
+                                just_confirmed_upgrade = False
+                                selected_upgrade_index = None
+                                confirm_upgrade_button_rect = None
 
                             player_ap -= 1
                             player_turn = player_ap > 0
@@ -969,6 +1028,39 @@ while running:
 
             if selected_class and selected_class.stats["health"] <= 0:
                 game_state = STATE_GAME_OVER
+
+        elif game_state == STATE_BREAK_ROOM:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_pos = pygame.mouse.get_pos()
+
+                if not break_room_action_taken:
+                    for label, rect in break_room_option_rects.items():
+                        if rect.collidepoint(mouse_pos):
+                            print(f"{label} selected")
+                            combat_log.append(f"Used {label}!")
+
+                            if label == "Heal":
+                                selected_class.stats["health"] = 100
+                            elif label == "Upgrade Skills":
+                                pass
+
+                            elif label == "Upgrade Items":
+                                pass
+
+                            elif label == "Shop":
+                                pass
+
+                            break_room_action_taken = True
+                else:
+                    if continue_button_rect.collidepoint(mouse_pos):
+                        break_room_action_taken = False
+                        start_floor(current_floor + 1)
+
+
+
+
+
+
 
 
 

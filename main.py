@@ -489,13 +489,13 @@ def start_floor(floor):
 
     break_room_action_taken = False
 
-    # if floor %5 == 0 and floor % 10 != 0:
-    #     game_state = STATE_BREAK_ROOM
-    #     floor_enemies = []
-    #     return
+    if floor %5 == 0 and floor % 10 != 0:
+        game_state = STATE_BREAK_ROOM
+        floor_enemies = []
+        return
 
 
-
+    #Boss floor
     if floor % 10 == 0:
         boss = get_random_enemy_for_floor(floor)
         floor_enemies = [boss]
@@ -541,6 +541,9 @@ item_button_rect = pygame.Rect(SCREEN_WIDTH // 2 + 110, SCREEN_HEIGHT - 100, 200
 continue_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, 520, 200, 60)
 break_room_action_taken = False
 
+show_next_floor_button = False
+next_floor_triggered = False
+next_floor_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 100, 200, 60)
 
 #Variable for character selection
 selected_class = None
@@ -699,6 +702,9 @@ def draw_game_screen():
     if show_stats_popup:
         draw_stats_popup()
 
+    if show_next_floor_button:
+        draw_button(next_button_rect, "Next Floor")
+
 
 #Comabt system
 player_turn = True
@@ -737,7 +743,6 @@ def draw_combat_log():
 upgrade_options = []
 show_upgrade_popup = False
 selected_upgrade_index = None
-show_next_floor_button = False
 
 just_confirmed_upgrade = False
 
@@ -825,6 +830,9 @@ def draw_break_room_screen():
 #Game Loop
 running = True
 while running:
+    next_floor_triggered = False
+
+
     for event in pygame.event.get():
         #Close window
         if event.type == pygame.QUIT:
@@ -857,6 +865,9 @@ while running:
             pygame.time.set_timer(pygame.USEREVENT + 1, 0)
             start_floor(current_floor + 1)
 
+        if game_state == STATE_GAME and next_floor_triggered:
+            next_floor_triggered = False
+            start_floor(current_floor + 1)
 
         #Transition
         if game_state == STATE_TITLE:
@@ -907,6 +918,11 @@ while running:
             if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 mouse_pos = pygame.mouse.get_pos()
 
+                if show_next_floor_button and next_floor_button_rect.collidepoint(mouse_pos):
+                    show_next_floor_button = False
+                    next_floor_triggered = True
+
+
                 if show_upgrade_popup:
 
                     for i, rect in enumerate(upgrade_button_rects):
@@ -927,14 +943,8 @@ while running:
                         selected_class.stats[chosen_stat] += 10
                         just_confirmed_upgrade = True
                         show_upgrade_popup = False
+                        show_next_floor_button = True
 
-
-                        if (current_floor + 1) % 5 == 0 and (current_floor + 1) % 10 != 0:
-                            game_state = STATE_BREAK_ROOM
-                            floor_enemies = []
-                            current_floor += 1
-                        else:
-                            pygame.time.set_timer(pygame.USEREVENT + 1, 200)
 
 
                 if targeting_mode:
@@ -1096,8 +1106,6 @@ while running:
 
     if show_quit_popup:
         draw_quit_popup()
-
-
 
 
     #Update the screen

@@ -549,11 +549,42 @@ rogue = Rogue()
 
 player_inventory = []
 show_inventory_popup = False
+selected_inventory_index = None
+use_item_button_rect = None
 
 player_abilities = []
 
 
+ITEM_POOL = [
+    {"name": "Health Potion", "type": "healing", "effect": 50},
+    {"name": "Mega Healing Potion", "type": "healing", "effect": 100},
+    {"name": "Mana Potion", "type": "mana", "effect": 50},
+    {"name": "Mega Mana Potion", "type": "mana", "effect": 100},
+    {"name": "Longsword", "type": "Damage", "effect": 40},
+
+]
+
+ITEM_DATABASE = {
+    "Health Potion": {
+        "type": "healing",
+        "description": "Restores 50 HP",
+        "effect":  lambda player: setattr(player.stats, "health", min(player.stats["health"] + 50, 100))
+    },
+    "Mega Health Potion": {
+        "type": "healing",
+        "description": "Restores 100 HP",
+        "effect":  lambda player: setattr(player.stats, "health", min(player.stats["health"] + 100, 100))
+    },
+    "Mana Potion": {
+        "type": "mana",
+        "description": "Increase mana by 50",
+        "effect": lambda player: setattr(player.stats, "mana", min(player.stats["mana"] + 50, 100))
+    },
+}
+
 def draw_inventory_popup():
+    global use_item_button_rect
+
     popup_width = 400
     popup_height = 300
     popup_x = SCREEN_WIDTH // 2 - popup_width // 2
@@ -568,8 +599,23 @@ def draw_inventory_popup():
     screen.blit(title, title.get_rect(center=(popup_rect.centerx - 50, popup_rect.y + 30)))
 
     for i, item in enumerate(player_inventory):
-        item_text = font.render(item, True, WHITE)
-        screen.blit(item_text, (popup_x + 30, popup_y + 70 + i * 40))
+        item_text = font.render(f"{item["name"]} ({item["type"]})", True, WHITE)
+        item_rect = pygame.Rect(popup_x + 30, popup_y + 70 + i * 40, 300, 30)
+        pygame.draw.rect(screen, GRAY, item_rect)
+        pygame.draw.rect(screen, YELLOW if selected_inventory_index == i else WHITE, item_rect, 2)
+        screen.blit(item_text, item_text.get_rect(center=(item_rect.x + 10, item_rect.y + 15)))
+
+        item["rect"] = item_rect
+
+    if selected_inventory_index is not None:
+        use_button = pygame.Rect(popup_x + 100, popup_y + popup_height - 50, 200, 30)
+        pygame.draw.rect(screen, GRAY, use_button)
+        pygame.draw.rect(screen, WHITE, use_button, 2)
+        use_text = font.render("Use Item", True, WHITE)
+        screen.blit(use_text, use_text.get_rect(center=use_button.center))
+        use_item_button_rect = use_button
+    else:
+        use_item_button_rect = None
 
 
 
@@ -792,7 +838,7 @@ def generate_stat_upgrades():
     selected_upgrade_index = None
 
     all_stats = ["health", "mana", "attack", "defence", "speed"]
-    all_items = ["Health Potion"]
+    all_items = ITEM_POOL
     all_abilities = ["Double Strike"]
 
     for i in range (4):
@@ -810,7 +856,7 @@ def generate_stat_upgrades():
             item = random.choice(all_items)
             upgrade_options.append({
                 "type": "item",
-                "label": f"Gain item: {item}",
+                "label": f"Gain item: {item['name']}",
                 "value": item
             })
 
@@ -829,6 +875,8 @@ def generate_stat_upgrades():
 #Draw upgrade popup
 def draw_upgrade_popup():
     global upgrade_popup_rect, confirm_upgrade_button_rect, upgrade_button_rects
+
+    upgrade_options[:] = [opt for opt in upgrade_options if isinstance(opt, dict) and "label" in opt]
 
     popup_width = 700
     popup_height = 500
@@ -979,8 +1027,35 @@ while running:
                 mouse_pos = pygame.mouse.get_pos()
 
                 if show_inventory_popup:
+                    for i, item in enumerate(player_inventory):
+                        if "rect" in item and item["rect"].collidepoint(mouse_pos):
+                            selected_inventory_index = i
+                            break
+
+                if selected_inventory_index is not None and use_item_button_rect and use_item_button_rect.collidepoint(mouse_pos):
+                    item = player_inventory[selected_inventory_index]
+                    effect = item["effect"]
+                    name = item["name"]
+                    type = item["type"].lower()
+
+                    #Apply item effect based on type
+                    if item["type"] == "healing":
+                        selected_class.stats["healing"] += effect
+                        combat_log.append(f"Used {item["name"]} - Restored {effect} HP.")
+                    elif item["type"] == "mana":
+                        selected_class.stats["mana"] += effect
+                        combat_log.append(f"Used {item["name"]} - Increased mana by {effect}.")
+                    elif item["type"].lower() == "damage":
+                        selected_class.stats["attack"] += effect
+                        combat_log.append(f"Used {item["name"]} - Attack increased by {effect}.")
+
+                    #Removed used items
+                    player_inventory.pop(selected_inventory_index)
+                    selected_inventory_index = None
                     show_inventory_popup = False
-                    continue
+                    use_item_button_rect = None
+
+
 
 
                 if show_upgrade_popup:
@@ -1040,7 +1115,7 @@ while running:
                             #Check if there are no more enemies
                             if not floor_enemies:
                                 show_upgrade_popup = True
-                                upgrade_options = random.sample(["health", "mana", "attack", "defence", "speed"], 4)
+                                generate_stat_upgrades()
                                 just_confirmed_upgrade = False
                                 selected_upgrade_index = None
                                 confirm_upgrade_button_rect = None

@@ -20,6 +20,7 @@ clock = pygame.time.Clock()
 
 #Fonts
 font = pygame.font.SysFont('Arial', 30)
+small_font = pygame.font.SysFont('Arial', 20)
 
 #Colours
 WHITE = (255, 255, 255)
@@ -596,14 +597,16 @@ def draw_inventory_popup():
     pygame.draw.rect(screen, WHITE, popup_rect, 3)
 
     title = font.render(f"Inventory", True, WHITE)
-    screen.blit(title, title.get_rect(center=(popup_rect.centerx - 50, popup_rect.y + 30)))
+    screen.blit(title, title.get_rect(center=(popup_rect.centerx, popup_rect.y + 30)))
 
     for i, item in enumerate(player_inventory):
-        item_text = font.render(f"{item["name"]} ({item["type"]})", True, WHITE)
+        label = f"{item["name"]} ({item["type"]})"
+        item_text = small_font.render(label, True, WHITE)
         item_rect = pygame.Rect(popup_x + 30, popup_y + 70 + i * 40, 300, 30)
+
         pygame.draw.rect(screen, GRAY, item_rect)
         pygame.draw.rect(screen, YELLOW if selected_inventory_index == i else WHITE, item_rect, 2)
-        screen.blit(item_text, item_text.get_rect(center=(item_rect.x + 10, item_rect.y + 15)))
+        screen.blit(item_text, item_text.get_rect(center=item_rect.center))
 
         item["rect"] = item_rect
 
@@ -1040,7 +1043,7 @@ while running:
 
                     #Apply item effect based on type
                     if item["type"] == "healing":
-                        selected_class.stats["healing"] += effect
+                        selected_class.stats["health"] += effect
                         combat_log.append(f"Used {item["name"]} - Restored {effect} HP.")
                     elif item["type"] == "mana":
                         selected_class.stats["mana"] += effect

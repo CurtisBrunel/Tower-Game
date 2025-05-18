@@ -13,7 +13,7 @@ SCREEN_HEIGHT = 720
 
 #Create the screen
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption('Tower Game')
+pygame.display.set_caption('Warden of the Tower')
 
 #Clock to control frame rate
 clock = pygame.time.Clock()

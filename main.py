@@ -753,16 +753,28 @@ def draw_game_screen():
                 text_rect = text_surface.get_rect(center=rect.center)
                 screen.blit(text_surface, text_rect)
 
-        elif combat_menu_state in ("attack", "spell"):
-            #4 option buttons
-            labels = ["Option 1", "Option 2", "Option 3", "Option 4"]
-            rect = [attack_sub_button_1, attack_sub_button_2, attack_sub_button_3 , attack_sub_button_4]
-            for rect, label in zip(rect, labels):
+        elif combat_menu_state in "attack":
+            for i, attack in enumerate(player_attacks[:4]):
+                rect = pygame.Rect(menu_x + (i % 2) * (button_width + button_spacing_x),
+                                   menu_y + (i // 2) * (button_height + button_spacing_y),
+                                   button_width, button_height)
                 pygame.draw.rect(screen, GRAY, rect)
                 pygame.draw.rect(screen, WHITE, rect, 2)
-                text_surface = font.render(label, True, WHITE)
-                text_rect = text_surface.get_rect(center=rect.center)
-                screen.blit(text_surface, text_rect)
+                text_surface = font.render(attack, True, WHITE)
+                screen.blit(text_surface, text_surface.get_rect(center=rect.center))
+                player_attacks[i] = {"name": attack, "rect": rect}
+
+        elif combat_menu_state == "spell":
+            for i, spell in enumerate(player_spells[:4]):
+                rect = pygame.Rect(menu_x + (i % 2) * (button_width + button_spacing_x),
+                                   menu_y + (i // 2) * (button_height + button_spacing_y),
+                                   button_width, button_height)
+                pygame.draw.rect(screen, GRAY, rect)
+                pygame.draw.rect(screen, WHITE, rect, 2)
+                text_surface = font.render(spell, True, WHITE)
+                screen.blit(text_surface, text_surface.get_rect(center=rect.center))
+                player_spells[i] = {"name": spell, "rect": rect}
+
 
     if show_stats_popup:
         draw_stats_popup()
@@ -832,7 +844,38 @@ UPGRADE_TYPE_STATS = "stat"
 UPGRADE_TYPE_ITEM = "item"
 UPGRADE_TYPE_ABILITY = "ability"
 
+CLASS_ABILITIES = {
+    "Mage": {
+        "attacks": ["Magic Bolt", "Arcane Strike", "Flame Burst", "Ice Lance"],
+        "spells": ["Mana Shield", "Fireball", "Heal", "Earthquake"]
+    },
+    "Warrior": {
+        "attacks": ["Slash", "Heavy Blow", "Whirlwind", "Shield Bash"],
+        "spells": ["Battle Cry", "Stone Skin", "Charge", "Earthquake"]
+    },
+    "Rogue": {
+        "attacks": ["Quick Stab", "Poison Dagger", "Backstab", "Shadow Strike"],
+        "spells": ["Smoke Bomb", "Agility Boost", "Invisibility", "Shadow Clone"]
+    }
+}
 
+player_attacks = []
+player_spells = []
+
+def initialise_abilities(class_name):
+    global player_attacks, player_spells
+    player_attacks = [CLASS_ABILITIES[selected_class.name]["attacks"][0]]
+    player_spells = [CLASS_ABILITIES[selected_class.name]["spells"][0]]
+
+
+def get_locked_abilities():
+    unlocked = set(player_attacks + player_spells)
+    class_abilities = CLASS_ABILITIES[selected_class.name]
+    locked = [
+        a for a in class_abilities["attacks"] + class_abilities["spells"]
+        if a not in unlocked
+    ]
+    return locked
 
 def generate_stat_upgrades():
     global upgrade_options, selected_upgrade_index
@@ -864,12 +907,14 @@ def generate_stat_upgrades():
             })
 
         elif upgrade_type == "ability":
-            ability = random.choice(all_abilities)
-            upgrade_options.append({
-                "type": "ability",
-                "label": f"Learn: {ability}",
-                "value": ability
-            })
+            locked = get_locked_abilities()
+            if locked:
+                ability = random.choice(locked)
+                upgrade_options.append({
+                    "type": "ability",
+                    "label": f"Learn: {ability}",
+                    "value": ability
+                })
 
 
 

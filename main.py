@@ -65,38 +65,39 @@ class CharacterClass:
 
 class MAGE(CharacterClass):
     def __init__(self):
-        super().__init__("Mage", {
+        stats = {
             "health": 60,
             "mana": 120,
             "attack": 20,
             "defence": 5,
             "speed": 8,
-        })
+        }
+        super().__init__("Mage", stats)
+        self.base_stats = stats.copy()
 
 class Warrior(CharacterClass):
     def __init__(self):
-        super().__init__("Warrior", {
+        stats = {
             "health": 100,
             "mana": 40,
             "attack": 25,
             "defence": 5,
             "speed": 8,
-        })
-        self.starting_attack = "Heavy Slash"
-        self.starting_spell = ""
+        }
+        super().__init__("Warrior", stats)
+        self.base_stats = stats.copy()
 
 class Rogue(CharacterClass):
     def __init__(self):
-        super().__init__("Rogue", {
+        stats = {
             "health": 80,
             "mana": 60,
             "attack": 18,
             "defence": 8,
             "speed": 12,
-        })
-        self.starting_attack = "Quick Stab"
-        self.starting_spell = ""
-
+        }
+        super().__init__("Rogue", stats)
+        self.base_stats = stats.copy()
 
 show_stats_popup = False
 
@@ -391,7 +392,7 @@ def get_random_enemy_for_floor(floor):
     return enemy
 
 def generate_enemies_for_floor(floor, enemy_pool):
-    num_enemies = random.randint(1, 1)
+    num_enemies = random.randint(2, 4)
     enemies = []
 
     for i in range(num_enemies):
@@ -485,16 +486,22 @@ def draw_main_character():
     screen.blit(class_text, text_rect)
 
 def start_floor(floor):
-    global current_floor, floor_intro_start_time, game_state, floor_enemies, selected_enemy, break_room_action_taken
+    global current_floor, floor_intro_start_time, game_state, floor_enemies, selected_enemy, break_room_action_taken, player_ap, player_turn
 
     current_floor = floor
     floor_intro_start_time = pygame.time.get_ticks()
     selected_enemy = None
-
     break_room_action_taken = False
 
+    #Reset player's mana to full
+    if selected_class:
+        selected_class.stats["mana"] = selected_class.base_stats["mana"]
 
-    #Boss floor
+    #Reset AP
+    player_ap = 3
+    player_turn = True
+
+    # Boss floor
     if floor % 10 == 0:
         boss = get_random_enemy_for_floor(floor)
         floor_enemies = [boss]
@@ -604,7 +611,7 @@ def draw_inventory_popup():
     screen.blit(title, title.get_rect(center=(popup_rect.centerx, popup_rect.y + 30)))
 
     for i, item in enumerate(player_inventory):
-        label = f"{item["name"]} ({item["type"]})"
+        label = f"{item['name']} ({item['type']})"
         item_text = small_font.render(label, True, WHITE)
         item_rect = pygame.Rect(popup_x + 30, popup_y + 70 + i * 40, 300, 30)
 
@@ -765,13 +772,14 @@ def draw_game_screen():
                 pygame.draw.rect(screen, GRAY, rect)
                 pygame.draw.rect(screen, WHITE, rect, 2)
 
-                if isinstance(attack, str):
-                    player_attacks[i] = {"name": attack, "rect": rect}
-                else:
-                    attack["rect"] = rect
-
-                text_surface = font.render(player_attacks[i]["name"], True, WHITE)
+                # Display ability name
+                text_surface = font.render(attack["name"], True, WHITE)
                 screen.blit(text_surface, text_surface.get_rect(center=rect.center))
+
+                # Store rect for click detection
+                attack["rect"] = rect
+
+
 
 
         elif combat_menu_state == "spell":
@@ -796,9 +804,6 @@ def draw_game_screen():
 
     if show_stats_popup:
         draw_stats_popup()
-
-    # if show_next_floor_button:
-    #     draw_button(next_button_rect, "Next Floor")
 
 
 #Comabt system
@@ -846,17 +851,6 @@ upgrade_popup_rect = pygame.Rect(SCREEN_WIDTH // 2 - 350, SCREEN_HEIGHT // 2 - 2
 confirm_upgrade_button_rect = None
 upgrade_button_rects = []
 
-# #Break Room
-# break_room_option_rects = {
-#     "Shop": pygame.Rect(SCREEN_WIDTH // 2 - 150, 200, 300, 60),
-#     "Upgrade Skill": pygame.Rect(SCREEN_WIDTH // 2 - 150, 280, 300, 60),
-#     "Heal": pygame.Rect(SCREEN_WIDTH // 2 - 150, 360, 300, 60),
-#     "Upgrade Items": pygame.Rect(SCREEN_WIDTH // 2 - 150, 440, 300, 60)
-# }
-#
-#
-# #Button going to the next floor
-# next_button_rect = pygame.Rect(SCREEN_WIDTH // 2 - 100, SCREEN_HEIGHT - 160, 200, 60)
 
 UPGRADE_TYPE_STATS = "stat"
 UPGRADE_TYPE_ITEM = "item"
@@ -864,16 +858,46 @@ UPGRADE_TYPE_ABILITY = "ability"
 
 CLASS_ABILITIES = {
     "Mage": {
-        "attacks": ["Magic Bolt", "Arcane Strike", "Flame Burst", "Ice Lance"],
-        "spells": ["Mana Shield", "Fireball", "Heal", "Earthquake"]
+        "attacks": [
+            {"name": "Magic Bolt", "damage": 15},
+            {"name": "Arcane Strike", "damage": 20},
+            {"name": "Flame Burst", "damage": 25},
+            {"name": "Ice Lance", "damage": 30}
+        ],
+        "spells": [
+            {"name": "Mana Shield", "defence": 10, "mana_cost": 20},
+            {"name": "Fireball", "damage": 35, "mana_cost": 10},
+            {"name": "Heal", "damage": -30, "mana_cost": 20},
+            {"name": "Earthquake", "damage": 40, "mana_cost": 20}
+        ]
     },
     "Warrior": {
-        "attacks": ["Slash", "Heavy Blow", "Whirlwind", "Shield Bash"],
-        "spells": ["Battle Cry", "Stone Skin", "Charge", "Earthquake"]
+        "attacks": [
+            {"name": "Slash", "damage": 20},
+            {"name": "Heavy Blow", "damage": 30},
+            {"name": "Whirlwind", "damage": 25},
+            {"name": "Shield Bash", "damage": 15}
+        ],
+        "spells": [
+            {"name": "Battle Cry", "damage": 40, "mana_cost": 20},
+            {"name": "Stone Skin", "defence": 10, "mana_cost": 20},
+            {"name": "Charge", "damage": 35, "mana_cost": 20},
+            {"name": "Earthquake", "damage": 40, "mana_cost": 20}
+        ]
     },
     "Rogue": {
-        "attacks": ["Quick Stab", "Poison Dagger", "Backstab", "Shadow Strike"],
-        "spells": ["Smoke Bomb", "Agility Boost", "Invisibility", "Shadow Clone"]
+        "attacks": [
+            {"name": "Quick Stab", "damage": 15},
+            {"name": "Poison Dagger", "damage": 20},
+            {"name": "Backstab", "damage": 30},
+            {"name": "Shadow Strike", "damage": 25}
+        ],
+        "spells": [
+            {"name": "Smoke Bomb", "damage": 15, "mana_cost": 20},
+            {"name": "Agility Boost", "damage": 5, "mana_cost": 20},
+            {"name": "Invisibility", "defence": 10, "mana_cost": 20},
+            {"name": "Shadow Clone", "damage": 20, "mana_cost": 20}
+        ]
     }
 }
 
@@ -895,25 +919,13 @@ def get_locked_abilities():
         return []
 
     class_abilities = CLASS_ABILITIES[class_name]
+    known_ability_names = set(a["name"] for a in player_attacks + player_spells)
 
-    #Flatten current known abilities
-    known_abilities = set(player_attacks + player_spells)
-
-    #Combine class-specific abilities
-    all_class_abilities = class_abilities["attacks"] + class_abilities["spells"]
-
-    #Return only abilities the player hasn't learned yet
-    locked_abilities = [ability for ability in all_class_abilities if ability not in known_abilities]
+    # Return only abilities the player hasn't learned yet
+    all_abilities = class_abilities["attacks"] + class_abilities["spells"]
+    locked_abilities = [a for a in all_abilities if a["name"] not in known_ability_names]
     return locked_abilities
 
-
-    unlocked = set(player_attacks + player_spells)
-    class_abilities = CLASS_ABILITIES[selected_class.name]
-    locked = [
-        a for a in class_abilities["attacks"] + class_abilities["spells"]
-        if a not in unlocked
-    ]
-    return locked
 
 def generate_stat_upgrades():
     global upgrade_options, selected_upgrade_index
@@ -949,7 +961,7 @@ def generate_stat_upgrades():
                 ability = random.choice(locked)
                 upgrade_options.append({
                     "type": "ability",
-                    "label": f"Learn: {ability}",
+                    "label": f"Learn: {ability["name"]}",
                     "value": ability
                 })
 
@@ -996,24 +1008,6 @@ def draw_upgrade_popup():
     else:
         confirm_upgrade_button_rect = None
 
-
-
-# def draw_break_room_screen():
-#     screen.fill(DARK_GRAY)
-#     title_text = font.render(f"Break Room - Floor {current_floor}", True, WHITE)
-#     screen.blit(title_text, title_text.get_rect(center=(SCREEN_WIDTH // 2, 100)))
-#
-#     for label, rect in break_room_option_rects.items():
-#         pygame.draw.rect(screen, GRAY, rect)
-#         pygame.draw.rect(screen, WHITE, rect, 2)
-#         text = font.render(label, True, WHITE)
-#         screen.blit(text, text.get_rect(center=rect.center))
-#
-#     if break_room_action_taken:
-#         pygame.draw.rect(screen, GRAY, continue_button_rect)
-#         pygame.draw.rect(screen, WHITE, continue_button_rect, 2)
-#         continue_text = font.render("Continue", True, WHITE)
-#         screen.blit(continue_text, continue_text.get_rect(center=continue_button_rect.center))
 
 
 
@@ -1164,57 +1158,65 @@ while running:
                         continue
 
                     if (
-                        selected_upgrade_index is not None
-                        and confirm_upgrade_button_rect
-                        and confirm_upgrade_button_rect.collidepoint(mouse_pos)
-                        and not just_confirmed_upgrade
+                            selected_upgrade_index is not None
+                            and confirm_upgrade_button_rect
+                            and confirm_upgrade_button_rect.collidepoint(mouse_pos)
+                            and not just_confirmed_upgrade
                     ):
                         chosen = upgrade_options[selected_upgrade_index]
 
                         if chosen["type"] == "stat":
                             selected_class.stats[chosen["value"]] += 10
-                            combat_log.append(f"Upgraded {chosen["value"]} by 10")
+                            combat_log.append(f"Upgraded {chosen['value']} by 10")
 
                         elif chosen["type"] == "item":
                             player_inventory.append(chosen["value"])
-                            combat_log.append(f"Obtained item: {chosen['value']}")
+                            combat_log.append(f"Obtained item: {chosen['value']['name']}")
 
                         elif chosen["type"] == "ability":
-                            ability_name = chosen["value"]
-                            # Add ability to correct player list
-                            if ability_name in CLASS_ABILITIES[selected_class.name]["attacks"]:
-                                player_attacks.append(ability_name)
-                            elif ability_name in CLASS_ABILITIES[selected_class.name]["spells"]:
-                                player_spells.append(ability_name)
+                            ability = chosen["value"]  # This is a dict: {"name": ..., "damage": ...}
+                            ability_name = ability["name"]
 
-                            combat_log.append(f"Learned ability: {ability_name}")
+                            # Determine whether it's an attack or a spell based on class
+                            if ability_name in [a["name"] for a in CLASS_ABILITIES[selected_class.name]["attacks"]]:
+                                player_attacks.append(ability)
+                                combat_log.append(f"Learned new attack: {ability_name}")
+                            elif ability_name in [s["name"] for s in CLASS_ABILITIES[selected_class.name]["spells"]]:
+                                player_spells.append(ability)
+                                combat_log.append(f"Learned new spell: {ability_name}")
+                            else:
+                                combat_log.append(f"Learned unknown ability: {ability_name}")
 
                         just_confirmed_upgrade = True
                         show_upgrade_popup = False
 
+                        # Prepare for next floor
                         pygame.time.set_timer(pygame.USEREVENT + 1, 200)
-
-
-
 
                 if targeting_mode:
                     for enemy, enemy_rect in enemy_hitboxes:
                         if enemy_rect.collidepoint(mouse_pos):
-                            damage = 100  # change later to attack
-                            enemy.stats["health"] -= damage
+                            # Get base attack and skill bonus
+                            base_attack = selected_class.stats.get("attack", 0)
+                            ability_damage = pending_attack_option.get("damage", 0)
+                            total_damage = base_attack + ability_damage
 
-                            log_msg = f"{selected_class.name} hits {enemy.name}  for {damage} damage!"
-                            print(log_msg)
-                            combat_log.append(log_msg)
+                            # Apply damage
+                            enemy.stats["health"] -= total_damage
 
-                            #Removes dead enemies
+                            # Add to combat log
+                            combat_log.append(
+                                f"{selected_class.name} used {pending_attack_option['name']} on {enemy.name} for {total_damage} damage!"
+                            )
+
+                            # Remove dead enemies
                             floor_enemies = [enemy for enemy in floor_enemies if enemy.stats["health"] > 0]
 
-                            #Rebuild hitboxes
+                            # Rebuild enemy hitboxes
                             enemy_hitboxes = []
                             draw_enemies(floor_enemies)
 
-                            #Check if there are no more enemies
+                            # Check for floor clear
                             if not floor_enemies:
                                 show_upgrade_popup = True
                                 generate_stat_upgrades()
@@ -1222,6 +1224,7 @@ while running:
                                 selected_upgrade_index = None
                                 confirm_upgrade_button_rect = None
 
+                            # Use up action point
                             player_ap -= 1
                             player_turn = player_ap > 0
                             targeting_mode = False
@@ -1242,25 +1245,50 @@ while running:
                         elif combat_menu_state == "attack":
                             for ability in player_attacks:
                                 if isinstance(ability, dict) and "rect" in ability and ability["rect"].collidepoint(mouse_pos):
-                                    ability_name = ability["name"]
-                                    combat_log.append(f"Used Attack: {ability_name}")
-                                    player_attacks.remove(ability)
+                                    pending_attack_option = ability
+                                    combat_log.append(f"Used Attack: {ability['name']}")
                                     targeting_mode = True
-                                    pending_attack_option = ability_name
-                                    combat_menu_state= None
+                                    combat_menu_state = None
                                     break
 
                         elif combat_menu_state == "spell":
                             for ability in player_spells:
-                                if isinstance(ability, dict) and ability["rect"].collidepoint(mouse_pos):
+                                if ability["rect"].collidepoint(mouse_pos):
                                     ability_name = ability["name"]
-                                    combat_log.append(f"Used Spell: {ability_name}")
-                                    player_spells.remove(ability)
+                                    mana_cost = ability.get("mana_cost", 0)
+
+                                    current_mana = selected_class.stats.get("mana", 0)
+                                    if current_mana < mana_cost:
+                                        combat_log.append(f"Not enough mana to cast {ability_name}!")
+                                        combat_menu_state = None
+                                        break
+
+                                    #Deduct mana
+                                    selected_class.stats["mana"] -= mana_cost
+                                    combat_log.append(f"{selected_class.name} cast {ability_name} (-{mana_cost} mana)")
+
+                                    #Handle special spells
+                                    if ability_name == "Mana Shield":
+                                        selected_class.stats["defence"] += 10
+                                        combat_log.append(f"{selected_class.name}'s defence increased by 10.")
+                                        player_ap -= 1
+                                        player_turn = player_ap > 0
+                                        combat_menu_state = None
+                                        break
+
+                                    elif ability_name == "Heal":
+                                        selected_class.stats["health"] = min(selected_class.stats["health"] + 30, 100)
+                                        combat_log.append(f"{selected_class.name} healed for 30 HP.")
+                                        player_ap -= 1
+                                        player_turn = player_ap > 0
+                                        combat_menu_state = None
+                                        break
+
+                                    #Offensive spell → enter targeting
                                     targeting_mode = True
-                                    pending_attack_option = ability_name
+                                    pending_attack_option = ability
                                     combat_menu_state = None
                                     break
-
 
 
                         elif stats_button_rect.collidepoint(mouse_pos):
@@ -1278,15 +1306,15 @@ while running:
                 if event.key == pygame.K_ESCAPE and show_stats_popup:
                     show_stats_popup = False
 
-
-
-
             if not player_turn:
                 def enemy_turn():
                     global player_turn, player_ap
 
                     for enemy in floor_enemies:
-                        damage = max(0, enemy.stats["attack"] - selected_class.stats["defence"])
+                        raw_attack = enemy.stats["attack"]
+                        player_defence = selected_class.stats["defence"]
+                        damage = max(1, raw_attack - player_defence)  # Always at least 1
+
                         selected_class.stats["health"] -= damage
                         log_msg = f"{enemy.name} attacks for {damage} damage"
                         print(log_msg)
@@ -1300,41 +1328,6 @@ while running:
 
             if selected_class and selected_class.stats["health"] <= 0:
                 game_state = STATE_GAME_OVER
-
-        # elif game_state == STATE_BREAK_ROOM:
-        #     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-        #         mouse_pos = pygame.mouse.get_pos()
-        #
-        #         if not break_room_action_taken:
-        #             for label, rect in break_room_option_rects.items():
-        #                 if rect.collidepoint(mouse_pos):
-        #                     print(f"{label} selected")
-        #                     combat_log.append(f"Used {label}!")
-        #
-        #                     if label == "Heal":
-        #                         selected_class.stats["health"] = 100
-        #                     elif label == "Upgrade Skills":
-        #                         pass
-        #
-        #                     elif label == "Upgrade Items":
-        #                         pass
-        #
-        #                     elif label == "Shop":
-        #                         pass
-        #
-        #                     break_room_action_taken = True
-        #         else:
-        #             if continue_button_rect.collidepoint(mouse_pos):
-        #                 break_room_action_taken = False
-        #                 start_floor(current_floor + 1)
-
-
-
-
-
-
-
-
 
 
 
